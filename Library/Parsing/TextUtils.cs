@@ -36,17 +36,10 @@ internal static class TextUtils
             text = text[1..];
             return true;
         }
-        else if (text[0].IsCarriageReturn())
+        if (text[0].IsCarriageReturn())
         {
-            if (text.Length > 1 && text[1].IsLineFeed())
-            {
-                text = text[2..];
-            }
-            else
-            {
-                text = text[1..];
-            }
-
+            if (text.Length > 1 && text[1].IsLineFeed()) text = text[2..];
+            else text = text[1..];
             return true;
         }
         return false;
@@ -90,10 +83,7 @@ internal static class TextUtils
             }
 
             index = tmp.CountLeadingCharacter(ch => ch.IsSpace() || ch.IsTab());
-            if (tmp[index].IsLineEnding())
-            {
-                return false;
-            }
+            if (tmp[index].IsLineEnding()) return false;
             tmp = tmp[index..];
         }
 
@@ -105,30 +95,20 @@ internal static class TextUtils
     {
         tagName = string.Empty;
 
-        if (text.IsEmpty)
-        {
-            return false;
-        }
+        if (text.IsEmpty) return false;
 
         if (char.IsAsciiLetter(text[0]))
         {
             int i;
             for (i = 1; i < text.Length; i++)
-            {
-                if ((char.IsAsciiLetter(text[i]) || char.IsAsciiDigit(text[i]) || text[i] is '-') is false)
-                {
-                    break;
-                }
-            }
+                if ((char.IsAsciiLetter(text[i]) || char.IsAsciiDigit(text[i]) || text[i] is '-') is false) break; 
 
             tagName = text[..i].ToString();
             text = text[i..];
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
     private static bool TryReadAttributeName(this ref ReadOnlySpan<char> text)
@@ -225,35 +205,14 @@ internal static class TextUtils
         tag = string.Empty;
 
         var tmp = text;
-        if (tmp.StartsWith("<") is false)
-        {
-            return false;
-        }
 
+        if (tmp.StartsWith("<") is false) return false;
         tmp = tmp[1..];
-
-        if (tmp.TryReadTagName(out _) is false)
-        {
-            return false;
-        }
-
+        if (tmp.TryReadTagName(out _) is false) return false;
         while (tmp.TryReadAttribute()) { }
-
-        if (tmp.TryRemoveTagInnerSpaces() is false)
-        {
-            return false;
-        }
-
-        if (tmp.StartsWith("/"))
-        {
-            tmp = tmp[1..];
-        }
-
-        if (tmp.StartsWith(">") is false)
-        {
-            return false;
-        }
-
+        if (tmp.TryRemoveTagInnerSpaces() is false) return false;
+        if (tmp.StartsWith("/")) tmp = tmp[1..];
+        if (tmp.StartsWith(">") is false) return false;
         tmp = tmp[1..];
 
         tag = text[..^tmp.Length].ToString();
@@ -266,28 +225,12 @@ internal static class TextUtils
         tag = string.Empty;
 
         var tmp = text;
-        if (tmp.StartsWith("</") is false)
-        {
-            return false;
-        }
 
+        if (tmp.StartsWith("</") is false) return false;
         tmp = tmp[2..];
-
-        if (tmp.TryReadTagName(out _) is false)
-        {
-            return false;
-        }
-
-        if (tmp.TryRemoveTagInnerSpaces() is false)
-        {
-            return false;
-        }
-
-        if (tmp.StartsWith(">") is false)
-        {
-            return false;
-        }
-
+        if (tmp.TryReadTagName(out _) is false) return false;
+        if (tmp.TryRemoveTagInnerSpaces() is false) return false;
+        if (tmp.StartsWith(">") is false) return false;
         tmp = tmp[1..];
 
         tag = text[..^tmp.Length].ToString();
@@ -297,28 +240,17 @@ internal static class TextUtils
 
     public static bool TryReadHtmlComment(this ref ReadOnlySpan<char> text, out string tag)
     {
-        if (text.StartsWith("<!--") is false)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        tag = string.Empty;
 
+        if (text.StartsWith("<!--") is false) return false;
         var endIndex = text[4..].IndexOf("-->") + 4;
-        if (endIndex is 3)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        if (endIndex is 3) return false;
 
         var commentSpan = text[4..endIndex];
         if (commentSpan.StartsWith(">")
             || commentSpan.StartsWith("->")
             || commentSpan.EndsWith("-")
-            || commentSpan.IndexOf("--") is not -1)
-        {
-            tag = string.Empty;
-            return false;
-        }
+            || commentSpan.IndexOf("--") is not -1) return false;
 
         tag = text[..(endIndex + 3)].ToString();
         text = text[(endIndex + 3)..];
@@ -327,18 +259,11 @@ internal static class TextUtils
 
     public static bool TryReadProcessingInstruction(this ref ReadOnlySpan<char> text, out string tag)
     {
-        if (text.StartsWith("<?") is false)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        tag = string.Empty;
 
+        if (text.StartsWith("<?") is false) return false;
         var endIndex = text[2..].IndexOf("?>") + 2;
-        if (endIndex is 1)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        if (endIndex is 1) return false;
 
         tag = text[..(endIndex + 2)].ToString();
         text = text[(endIndex + 2)..];
@@ -347,24 +272,13 @@ internal static class TextUtils
 
     public static bool TryReadDeclaration(this ref ReadOnlySpan<char> text, out string tag)
     {
-        if (text.StartsWith("<!") is false)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        tag = string.Empty;
 
-        if (text.Length < 3 || char.IsAsciiLetter(text[2]) is false)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        if (text.StartsWith("<!") is false) return false;
+        if (text.Length < 3 || char.IsAsciiLetter(text[2]) is false) return false;
 
         var endIndex = text.IndexOf('>');
-        if (endIndex is -1)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        if (endIndex is -1) return false;
 
         tag = text[..(endIndex + 1)].ToString();
         text = text[(endIndex + 1)..];
@@ -373,18 +287,11 @@ internal static class TextUtils
 
     public static bool TryReadCdataSection(this ref ReadOnlySpan<char> text, out string tag)
     {
-        if (text.StartsWith("<![CDATA[") is false)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        tag = string.Empty;
 
+        if (text.StartsWith("<![CDATA[") is false) return false;
         var endIndex = text.IndexOf("]]>");
-        if (endIndex is -1)
-        {
-            tag = string.Empty;
-            return false;
-        }
+        if (endIndex is -1) return false;
 
         tag = text[..(endIndex + 3)].ToString();
         text = text[(endIndex + 3)..];
@@ -393,30 +300,17 @@ internal static class TextUtils
 
     public static bool TryReadLinkLabel(this ref ReadOnlySpan<char> text, out string label)
     {
-        var tmp = text;
-        if (tmp.StartsWith("[") is false)
-        {
-            label = string.Empty;
-            return false;
-        }
+        label = string.Empty;
 
+        var tmp = text;
+
+        if (tmp.StartsWith("[") is false) return false;
         tmp = tmp[1..];
-        if (tmp.TryReadUtilUnescaped(']', out label) is false || label.Length > 999)
-        {
-            return false;
-        }
+        if (tmp.TryReadUtilUnescaped(']', out label) is false || label.Length > 999) return false;
 
         var labelSpan = label.AsSpan();
-
-        if (labelSpan.TryReadUtilUnescaped('[', out _))
-        {
-            return false;
-        }
-
-        if (label.All(ch => ch.IsSpace() || ch.IsTab() || ch.IsLineEnding()))
-        {
-            return false;
-        }
+        if (labelSpan.TryReadUtilUnescaped('[', out _)) return false;
+        if (label.All(ch => ch.IsSpace() || ch.IsTab() || ch.IsLineEnding())) return false;
 
         text = tmp[1..];
         return true;
@@ -427,27 +321,13 @@ internal static class TextUtils
         destination = string.Empty;
 
         var tmp = text;
-        if (tmp.StartsWith("<") is false)
-        {
-            return false;
-        }
+
+        if (tmp.StartsWith("<") is false) return false;
         tmp = tmp[1..];
-
-        if (tmp.TryReadUtilUnescaped('>', out destination) is false)
-        {
-            return false;
-        }
-
-        if (destination.Any(ch => ch.IsLineEnding()))
-        {
-            return false;
-        }
-
+        if (tmp.TryReadUtilUnescaped('>', out destination) is false) return false;
+        if (destination.Any(ch => ch.IsLineEnding())) return false;
         var destinationSpan = destination.AsSpan();
-        if (destinationSpan.TryReadUtilUnescaped('<', out _))
-        {
-            return false;
-        }
+        if (destinationSpan.TryReadUtilUnescaped('<', out _)) return false;
 
         text = tmp[1..];
         return true;
@@ -457,10 +337,7 @@ internal static class TextUtils
     {
         destination = string.Empty;
 
-        if (text.StartsWith("<"))
-        {
-            return false;
-        }
+        if (text.StartsWith("<")) return false;
 
         var index = 0;
         while (index < text.Length)
@@ -475,15 +352,9 @@ internal static class TextUtils
             index++;
         }
 
-        if (index == text.Length)
-        {
-            destination = text.ToString();
-        }
+        if (index == text.Length) destination = text.ToString();
 
-        if (destination.Length is 0)
-        {
-            return false;
-        }
+        if (destination.Length is 0) return false;
 
         var matchCount = 0;
         index = 0;
@@ -491,22 +362,13 @@ internal static class TextUtils
         {
             var ch = destination[index];
 
-            if (ch is '\\')
-            {
-                index += 2;
-            }
+            if (ch is '\\') index += 2;
             else
             {
-                if (ch is '(')
-                {
-                    matchCount++;
-                }
+                if (ch is '(') matchCount++;
                 else if (ch is ')')
                 {
-                    if (matchCount > 0)
-                    {
-                        matchCount--;
-                    }
+                    if (matchCount > 0) matchCount--;
                     else
                     {
                         destination = destination[..index];
@@ -519,10 +381,7 @@ internal static class TextUtils
             }
         }
 
-        if (matchCount is not 0)
-        {
-            return false;
-        }
+        if (matchCount is not 0) return false;
 
         text = text[index..];
         return true;
@@ -537,8 +396,8 @@ internal static class TextUtils
         title = string.Empty;
 
         var tmp = text;
-        if (!tmp.StartsWith("\"")) return false;
 
+        if (!tmp.StartsWith("\"")) return false;
         tmp = tmp[1..];
         if (!tmp.TryReadUtilUnescaped('"', out title)) return false;
 
@@ -556,8 +415,8 @@ internal static class TextUtils
         title = string.Empty;
 
         var tmp = text;
-        if (!tmp.StartsWith("'")) return false;
 
+        if (!tmp.StartsWith("'")) return false;
         tmp = tmp[1..];
         if (!tmp.TryReadUtilUnescaped('\'', out title)) return false;
 
@@ -575,10 +434,9 @@ internal static class TextUtils
         title = string.Empty;
 
         var tmp = text;
+
         if (!tmp.StartsWith("(")) return false;
-
         tmp = tmp[1..];
-
         if (!tmp.TryReadUtilUnescaped(')', out title)) return false;
 
         var titleSpan = title.AsSpan();
@@ -599,18 +457,11 @@ internal static class TextUtils
 
     public static bool TryReadAbsoluteUri(this ref ReadOnlySpan<char> text, out string uri)
     {
-        if (text.IsEmpty)
-        {
-            uri = string.Empty;
-            return false;
-        }
+        uri = string.Empty;
+        if (text.IsEmpty) return false;
 
         // read scheme
-        if (char.IsAsciiLetter(text[0]) is false)
-        {
-            uri = string.Empty;
-            return false;
-        }
+        if (char.IsAsciiLetter(text[0]) is false) return false;
 
         int i;
         for (i = 1; i < text.Length; i++)
@@ -618,34 +469,20 @@ internal static class TextUtils
             var ch = text[i];
             if (char.IsAsciiLetter(ch) is false
                 && char.IsAsciiDigit(ch) is false
-                && ch is not '+' and not '.' and not '-')
-            {
-                break;
-            }
+                && ch is not '+' and not '.' and not '-') break;
         }
 
-        if (i < 2 || i > 32)
-        {
-            uri = string.Empty;
-            return false;
-        }
+        if (i < 2 || i > 32) return false;
 
         // read colon
-        if (text[i..].StartsWith(":") is false)
-        {
-            uri = string.Empty;
-            return false;
-        }
+        if (text[i..].StartsWith(":") is false) return false;
 
         // read remaining
         int j;
         for (j = i + 1; j < text.Length; j++)
         {
             var ch = text[j];
-            if (ch.IsAsciiControl() || ch.IsSpace() || ch is '<' or '>')
-            {
-                break;
-            }
+            if (ch.IsAsciiControl() || ch.IsSpace() || ch is '<' or '>') break;
         }
 
         uri = text[..j].ToString();
@@ -701,10 +538,7 @@ internal static class TextUtils
         while (index < text.Length && predicate(text[index]))
         {
             index++;
-            if (index == limit)
-            {
-                return index;
-            }
+            if (index == limit) return index;
         }
         return index;
     }
@@ -715,18 +549,12 @@ internal static class TextUtils
         while (index <= text.Length && predicate(text[^index]))
         {
             index++;
-            if (index == limit)
-            {
-                return index;
-            }
+            if (index == limit) return index;
         }
         return index - 1;
     }
 
-    public static int GetTabSpaces(this int columnNumber)
-    {
-        return 4 - (columnNumber & 3);
-    }
+    public static int GetTabSpaces(this int columnNumber) => 4 - (columnNumber & 3);
     public static (int Count, int Index, int TabRemainingSpaces) CountLeadingSpace(this ReadOnlySpan<char> text, int columnNumber, int limit)
     {
         var index = 0;
@@ -750,19 +578,10 @@ internal static class TextUtils
     {
         var start = 0;
         var end = text.Length;
-        while (start < text.Length && (text[start].IsSpace() || text[start].IsTab()))
-        {
-            start++;
-        }
-        while (end > 0 && (text[end - 1].IsSpace() || text[end - 1].IsTab()))
-        {
-            end--;
-        }
+        while (start < text.Length && (text[start].IsSpace() || text[start].IsTab())) start++;
+        while (end > 0 && (text[end - 1].IsSpace() || text[end - 1].IsTab())) end--;
 
-        if (start > end)
-        {
-            return ReadOnlySpan<char>.Empty;
-        }
+        if (start > end) return ReadOnlySpan<char>.Empty;
         return text[start..end];
     }
 
@@ -830,10 +649,7 @@ internal static class TextUtils
         var builder = new StringBuilder(text.Length);
         for (var i = 0; i < text.Length; i++)
         {
-            if (text[i] != '\\' || i == text.Length - 1 || text[i + 1].IsAsciiPunctuation() is false)
-            {
-                builder.Append(text[i]);
-            }
+            if (text[i] != '\\' || i == text.Length - 1 || text[i + 1].IsAsciiPunctuation() is false) builder.Append(text[i]);
             else
             {
                 i++;
@@ -846,10 +662,7 @@ internal static class TextUtils
 
     public static string FlattenText(this XElement? element)
     {
-        if (element is null)
-        {
-            return string.Empty;
-        }
+        if (element is null) return string.Empty;
 
         var builder = new StringBuilder();
         foreach (var node in element.Nodes())
@@ -868,10 +681,7 @@ internal static class TextUtils
         return builder.ToString();
     }
 
-    public static string HtmlEscape(this string text)
-    {
-        return System.Security.SecurityElement.Escape(text);
-    }
+    public static string HtmlEscape(this string text) => System.Security.SecurityElement.Escape(text);
 
     private static readonly Dictionary<string, string> EntityDictionary;
 
