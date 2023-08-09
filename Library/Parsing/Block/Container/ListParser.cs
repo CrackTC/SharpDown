@@ -7,7 +7,7 @@ internal static class ListParser
 {
     public static bool IsListLoose(List list)
     {
-        for (int i = 0; i < list.Children.Count; i++)
+        for (var i = 0; i < list.Children.Count; i++)
         {
             var listItem = (ListItem)list.Children[i];
             if (i != list.Children.Count - 1 && listItem.LastChild is BlankLine && listItem.Children.Count != 1)
@@ -15,8 +15,8 @@ internal static class ListParser
                 return true;
             }
 
-            bool skippedBlankLine = false;
-            for (int j = 0; j < listItem.Children.Count; j++)
+            var skippedBlankLine = false;
+            for (var j = 0; j < listItem.Children.Count; j++)
             {
                 if (listItem.Children[j] is not BlankLine)
                 {
@@ -24,7 +24,7 @@ internal static class ListParser
                 }
                 else if (skippedBlankLine)
                 {
-                    for (int k = j + 1; k < listItem.Children.Count; k++)
+                    for (var k = j + 1; k < listItem.Children.Count; k++)
                         if (listItem.Children[k] is not BlankLine) return true;
                 }
             }

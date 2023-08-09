@@ -10,7 +10,7 @@ internal class CodeSpanParser : IMarkdownLeafInlineParser
     {
         var builder = new StringBuilder(content.Length);
 
-        bool isAllSpace = true;
+        var isAllSpace = true;
         while (content.IsEmpty is false)
         {
             if (content.TryRemoveLineEnding()) builder.Append(TextUtils.Space);
@@ -36,15 +36,15 @@ internal class CodeSpanParser : IMarkdownLeafInlineParser
             return 0;
         }
 
-        int backtickCount = 1;
-        for (int i = 1; i < text.Length; i++)
+        var backtickCount = 1;
+        for (var i = 1; i < text.Length; i++)
         {
             if (text[i] is '`') backtickCount++;
             else break;
         }
 
-        int closingBacktickCount = 0;
-        for (int i = backtickCount + 1; i < text.Length; i++)
+        var closingBacktickCount = 0;
+        for (var i = backtickCount + 1; i < text.Length; i++)
         {
             if (text[i] == '`') closingBacktickCount++;
             else if (closingBacktickCount is not 0)
@@ -61,7 +61,7 @@ internal class CodeSpanParser : IMarkdownLeafInlineParser
 
         if (closingBacktickCount == backtickCount)
         {
-            var content = text[backtickCount..(text.Length - backtickCount)];
+            var content = text[backtickCount..^backtickCount];
             inline = new CodeSpan(NormalizeContent(content));
             return text.Length;
         }

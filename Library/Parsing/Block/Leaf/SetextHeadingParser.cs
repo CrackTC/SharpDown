@@ -17,7 +17,7 @@ internal class SetextHeadingParser : IMarkdownBlockParser
         if (count == 4) return text;
 
         char? validChar = null;
-        bool trailingSpace = false;
+        var trailingSpace = false;
         while (index < line.Length)
         {
             var ch = line[index];
@@ -33,7 +33,7 @@ internal class SetextHeadingParser : IMarkdownBlockParser
         }
 
         if (validChar == null) return text;
-        level = ValidChars.IndexOf(validChar!.Value) + 1;
+        level = ValidChars.IndexOf(validChar.Value) + 1;
         return remaining;
     }
 

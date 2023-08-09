@@ -1,7 +1,6 @@
 ﻿using System.Xml.Linq;
 using CrackTC.SharpDown.Parsing;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Structure;
 
 namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
@@ -19,7 +18,7 @@ internal class IndentedCodeBlock : LeafBlock
         return $"<pre><code>{Code.HtmlEscape()}</code></pre>";
     }
 
-    public override XElement? ToAST() => new(MarkdownRoot.Namespace + "code_block", Code);
+    public override XElement ToAst() => new(MarkdownRoot.Namespace + "code_block", Code);
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
                                      IEnumerable<LinkReferenceDefinition> definitions)

@@ -6,5 +6,5 @@ public abstract class MarkdownNode
 {
     public abstract string ToHtml(bool tight);
 
-    public abstract XElement? ToAST();
+    public abstract XElement? ToAst();
 }

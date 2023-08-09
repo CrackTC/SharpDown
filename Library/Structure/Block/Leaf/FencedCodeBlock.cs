@@ -1,14 +1,13 @@
 ﻿using CrackTC.SharpDown.Parsing;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Structure;
 using System.Xml.Linq;
 
 namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
 internal class FencedCodeBlock : LeafBlock
 {
-    public string InfoString { get; }
-    public string Code { get; }
+    private string InfoString { get; }
+    private string Code { get; }
 
     public FencedCodeBlock(string infoString, string code)
     {
@@ -35,15 +34,11 @@ internal class FencedCodeBlock : LeafBlock
 
     public override string ToHtml(bool tight)
     {
-        if (string.IsNullOrEmpty(InfoString))
-        {
-            return $"<pre><code>{Code.HtmlEscape()}</code></pre>";
-        }
-
-        return $"<pre><code class=\"language-{InfoString.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\">{Code.HtmlEscape()}</code></pre>";
+        return string.IsNullOrEmpty(InfoString) ? $"<pre><code>{Code.HtmlEscape()}</code></pre>"
+                                                : $"<pre><code class=\"language-{InfoString.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\">{Code.HtmlEscape()}</code></pre>";
     }
 
-    public override XElement? ToAST()
+    public override XElement ToAst()
     {
         if (string.IsNullOrEmpty(InfoString))
         {

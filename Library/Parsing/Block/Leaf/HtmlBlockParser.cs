@@ -1,11 +1,9 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
-using CrackTC.SharpDown.Parsing;
-using CrackTC.SharpDown.Parsing.Block;
 using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Leaf;
 
-namespace CrackTC.SharpDown.Core.Parsing.Block.Leaf;
+namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 
 internal partial class HtmlBlockParser : IMarkdownBlockParser
 {
@@ -20,7 +18,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
 
     private static HtmlBlockType GetBlockType(ReadOnlySpan<char> text)
     {
-        var line = TextUtils.ReadLine(text, out _, out int columnNumber, out _);
+        var line = TextUtils.ReadLine(text, out _, out var columnNumber, out _);
 
         if (line.IsEmpty) return HtmlBlockType.None;
         var (count, index, _) = line.CountLeadingSpace(columnNumber, 4);
@@ -36,7 +34,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
         if (line.StartsWith("<!--")) return HtmlBlockType.Comment;
         if (line.StartsWith("<?")) return HtmlBlockType.ProcessingInstruction;
         if (line.StartsWith("<!") && line.Length > 2 && char.IsAsciiLetter(line[2])) return HtmlBlockType.Declaration;
-        if (line.StartsWith("<![CDATA[")) return HtmlBlockType.CDATA;
+        if (line.StartsWith("<![CDATA[")) return HtmlBlockType.Cdata;
         if (line.StartsWith("<"))
         {
             var tmp = line[1..];
@@ -69,7 +67,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
 
         var remaining = text;
         var builder = new StringBuilder();
-        bool lineEndingFlag = false;
+        var lineEndingFlag = false;
         while (true)
         {
             var line = TextUtils.ReadLine(remaining, out remaining, out _, out _);
@@ -81,7 +79,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
                 HtmlBlockType.Comment => line.IndexOf("-->") != -1,
                 HtmlBlockType.ProcessingInstruction => line.IndexOf("?>") != -1,
                 HtmlBlockType.Declaration => line.Contains('>'),
-                HtmlBlockType.CDATA => line.IndexOf("]]>") != -1,
+                HtmlBlockType.Cdata => line.IndexOf("]]>") != -1,
                 HtmlBlockType.Misc or HtmlBlockType.Any => remaining.IsBlankLine(),
                 _ => throw new InvalidOperationException("Unexpected HtmlBlockType")
             };
@@ -108,7 +106,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
         }
 
         text = remaining;
-        father.Children.Add(new HtmlBlock(content, type));
+        father.Children.Add(new HtmlBlock(content));
         return true;
     }
 }

@@ -29,8 +29,8 @@ internal class FencedCodeBlockParser : IMarkdownBlockParser
         if (indentation == 4) return text;
 
         char? validChar = null;
-        int fenceCount = 0;
-        for (int i = index; i < line.Length; i++)
+        var fenceCount = 0;
+        for (var i = index; i < line.Length; i++)
         {
             if (validChar is null && ValidChars.Contains(line[i]) || line[i] == validChar)
             {

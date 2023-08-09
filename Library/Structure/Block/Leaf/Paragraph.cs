@@ -1,6 +1,5 @@
 using CrackTC.SharpDown.Parsing;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Structure;
 using System.Xml.Linq;
 
 namespace CrackTC.SharpDown.Structure.Block.Leaf
@@ -14,20 +13,14 @@ namespace CrackTC.SharpDown.Structure.Block.Leaf
             Content = content;
         }
 
-        //public override XElement? ToHtml() => new("p", _children.Select(child => child.ToHtml()));
+        //public override XElement? ToHtml() => new("p", Children.Select(child => child.ToHtml()));
         public override string ToHtml(bool tight)
         {
-            if (tight)
-            {
-                return string.Concat(_children.Select(child => child.ToHtml(true)));
-            }
-            else
-            {
-                return $"<p>{string.Concat(_children.Select(child => child.ToHtml(false)))}</p>";
-            }
+            var content = string.Concat(Children.Select(child => child.ToHtml(tight)));
+            return tight ? content : $"<p>{content}</p>";
         }
 
-        public override XElement? ToAST() => new(MarkdownRoot.Namespace + "paragraph", _children.Select(child => child.ToAST()));
+        public override XElement ToAst() => new(MarkdownRoot.Namespace + "paragraph", Children.Select(child => child.ToAst()));
 
         internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
                                          IEnumerable<LinkReferenceDefinition> definitions)

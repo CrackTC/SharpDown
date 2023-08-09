@@ -8,7 +8,7 @@ namespace CrackTC.SharpDown.Parsing.Block.Container;
 
 internal class ListItemParser : IMarkdownBlockParser
 {
-    public static int CountBulletListMarker(ReadOnlySpan<char> text)
+    private static int CountBulletListMarker(ReadOnlySpan<char> text)
     {
         if (text.IsEmpty)
         {
@@ -18,7 +18,7 @@ internal class ListItemParser : IMarkdownBlockParser
         return "-+*".Contains(text[0]) ? 1 : 0;
     }
 
-    public static int CountOrderedListMarker(ReadOnlySpan<char> text)
+    private static int CountOrderedListMarker(ReadOnlySpan<char> text)
     {
         if (text.IsEmpty) return 0;
 
@@ -63,12 +63,12 @@ internal class ListItemParser : IMarkdownBlockParser
         var number = 0;
         char sign;
 
-        var line = TextUtils.ReadLine(text, out var remaining, out int columnNumber, out _);
+        var line = TextUtils.ReadLine(text, out var remaining, out var columnNumber, out _);
 
         var (leadingSpaceCount, index, _) = line.CountLeadingSpace(columnNumber, 4); // rule 4
         if (leadingSpaceCount is 4) return text; // 4 spaces is too many
 
-        int markCount = CountBulletListMarker(line[index..]);
+        var markCount = CountBulletListMarker(line[index..]);
         if (markCount is 0) // not unordered list item
         {
             isOrdered = true;
@@ -87,9 +87,9 @@ internal class ListItemParser : IMarkdownBlockParser
 
         line = line[(index + markCount)..];
         columnNumber += leadingSpaceCount + markCount;
-        int indentation = leadingSpaceCount + markCount;
+        var indentation = leadingSpaceCount + markCount;
 
-        bool beginWithBlankLine = false;
+        var beginWithBlankLine = false;
 
         if (line.IsBlankLine()) // rule 3
         {
@@ -117,7 +117,7 @@ internal class ListItemParser : IMarkdownBlockParser
 
         contentBuilder.Append(line[index..]).Append('\n');
 
-        bool firstIter = true;
+        var firstIter = true;
 
         while (true)
         {

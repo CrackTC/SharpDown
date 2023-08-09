@@ -14,10 +14,10 @@ internal class ThematicBreakParser : IMarkdownBlockParser
         var (count, index, _) = line.CountLeadingSpace(columnNumber, 4);
         if (count is 4) return text;
 
-        int validCount = 0;
+        var validCount = 0;
         while (index < line.Length)
         {
-            char ch = line[index];
+            var ch = line[index];
             index++;
             if (validChar is null && ValidChars.Contains(ch))
             {

@@ -1,14 +1,13 @@
 ﻿using System.Xml.Linq;
 using CrackTC.SharpDown.Parsing;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Structure;
 
 namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
 internal class SetextHeading : LeafBlock
 {
-    public int HeadingLevel { get; }
-    public string Content { get; }
+    private int HeadingLevel { get; }
+    private string Content { get; }
 
     public SetextHeading(int headingLevel, string content)
     {
@@ -16,13 +15,14 @@ internal class SetextHeading : LeafBlock
         Content = content;
     }
 
-    //public override XElement? ToHtml() => new("h" + HeadingLevel, _children.Select(child => child.ToHtml()));
+    //public override XElement? ToHtml() => new("h" + HeadingLevel, Children.Select(child => child.ToHtml()));
     public override string ToHtml(bool tight)
     {
-        return $"<h{HeadingLevel}>{string.Concat(_children.Select(child => child.ToHtml(tight)))}</h{HeadingLevel}>";
+        var content = string.Concat(Children.Select(child => child.ToHtml(tight)));
+        return $"<h{HeadingLevel}>{content}</h{HeadingLevel}>";
     }
 
-    public override XElement? ToAST() => new(MarkdownRoot.Namespace + "heading", new XAttribute("level", HeadingLevel), _children.Select(child => child.ToAST()));
+    public override XElement ToAst() => new(MarkdownRoot.Namespace + "heading", new XAttribute("level", HeadingLevel), Children.Select(child => child.ToAst()));
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
                                      IEnumerable<LinkReferenceDefinition> definitions)

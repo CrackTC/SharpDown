@@ -1,6 +1,5 @@
 ﻿using System.Xml.Linq;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Structure;
 
 namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
@@ -11,27 +10,21 @@ internal enum HtmlBlockType
     Comment,
     ProcessingInstruction,
     Declaration,
-    CDATA,
+    Cdata,
     Misc,
     Any
 }
 
 internal class HtmlBlock : LeafBlock
 {
-    public HtmlBlockType HtmlBlockType { get; }
+    private string Content { get; }
 
-    public string Content { get; }
-
-    public HtmlBlock(string content, HtmlBlockType blockType)
-    {
-        Content = content;
-        HtmlBlockType = blockType;
-    }
+    public HtmlBlock(string content) => Content = content;
 
     //public override XElement? ToHtml() => new("raw", Content);
     public override string ToHtml(bool tight) => Content;
 
-    public override XElement? ToAST() => new(MarkdownRoot.Namespace + "html_block", Content);
+    public override XElement ToAst() => new(MarkdownRoot.Namespace + "html_block", Content);
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
                                      IEnumerable<LinkReferenceDefinition> definitions)

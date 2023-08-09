@@ -1,6 +1,4 @@
-﻿using CrackTC.SharpDown.Parsing;
-using CrackTC.SharpDown.Parsing.Block;
-using CrackTC.SharpDown.Parsing.Block.Leaf;
+﻿using CrackTC.SharpDown.Parsing.Block.Leaf;
 using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Container;
 using CrackTC.SharpDown.Structure.Block.Leaf;
@@ -52,20 +50,17 @@ internal class BlockQuoteParser : IMarkdownBlockParser
     }
 
     private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text,
-                                           out BlockQuote? result,
                                            MarkdownBlock father,
                                            IEnumerable<IMarkdownBlockParser> blockParsers)
     {
-        result = null;
+        var line = TextUtils.ReadLine(text, out var remaining, out var columnNumber, out _);
 
-        var line = TextUtils.ReadLine(text, out var remaining, out int columnNumber, out _);
-
-        line = SkipBlockQuoteMarker(line, columnNumber, out int length);
+        line = SkipBlockQuoteMarker(line, columnNumber, out var length);
         if (length is 0) return text;
         columnNumber += length;
 
         var contentBuilder = new StringBuilder();
-        result = new BlockQuote();
+        var result = new BlockQuote();
 
         AppendBlockQuoteContent(contentBuilder, line, columnNumber);
 
@@ -127,7 +122,7 @@ internal class BlockQuoteParser : IMarkdownBlockParser
                                 MarkdownBlock father,
                                 IEnumerable<IMarkdownBlockParser> blockParsers)
     {
-        var remaining = Skip(text, out _, father, blockParsers);
+        var remaining = Skip(text, father, blockParsers);
         if (remaining == text)
         {
             return false;

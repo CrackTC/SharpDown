@@ -1,6 +1,4 @@
-﻿using CrackTC.SharpDown.Core.Parsing.Block.Leaf;
-using CrackTC.SharpDown.Core.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Parsing.Block;
+﻿using CrackTC.SharpDown.Parsing.Block;
 using CrackTC.SharpDown.Parsing.Block.Container;
 using CrackTC.SharpDown.Parsing.Block.Leaf;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
@@ -12,6 +10,8 @@ using CrackTC.SharpDown.Structure.Block.Leaf;
 using CrackTC.SharpDown.Structure.Inline;
 using CrackTC.SharpDown.Structure.Inline.Leaf;
 using CrackTC.SharpDown.Structure.Inline.Nested;
+using AutolinkParser = CrackTC.SharpDown.Parsing.Inline.Leaf.AutolinkParser;
+using HtmlBlockParser = CrackTC.SharpDown.Parsing.Block.Leaf.HtmlBlockParser;
 
 namespace CrackTC.SharpDown.Parsing;
 
@@ -38,9 +38,7 @@ public static class MarkdownParser
                              IEnumerable<IMarkdownBlockParser> blockParsers)
     {
         // parse blocks
-        bool lastIsParagraph = false;
-
-        if (father.LastChild is Paragraph) lastIsParagraph = true;
+        var lastIsParagraph = father.LastChild is Paragraph;
 
         while (text.IsEmpty is false)
         {
@@ -74,16 +72,17 @@ public static class MarkdownParser
     private static void CombineListItems(MarkdownBlock root)
     {
         var children = root.Children;
-        for (int i = 0; i < children.Count; i++) if (children[i] is ContainerBlock block) CombineListItems(block);
+        foreach (var child in children) if (child is ContainerBlock block) CombineListItems(block);
+
         var newChildren = new List<MarkdownNode>();
 
         List list = null!;
-        bool listAssigned = false;
-        bool meetBlankLine = false;
-        bool markedAsLoose = false;
-        for (int i = 0; i < children.Count; i++)
+        var listAssigned = false;
+        var meetBlankLine = false;
+        var markedAsLoose = false;
+        foreach (var child in children)
         {
-            if (children[i] is ListItem listItem)
+            if (child is ListItem listItem)
             {
                 if (!listAssigned) list = new List() { Sign = listItem.Sign, Number = listItem.Number, IsOrdered = listItem.IsOrdered };
                 else if (!ListItem.IsSameType((ListItem)list.Children[0], listItem))
@@ -101,7 +100,7 @@ public static class MarkdownParser
                 listAssigned = true;
                 list.Children.Add(listItem);
             }
-            else if (children[i] is not BlankLine)
+            else if (child is not BlankLine)
             {
                 if (listAssigned)
                 {
@@ -111,7 +110,7 @@ public static class MarkdownParser
                     newChildren.Add(list);
                 }
                 meetBlankLine = false;
-                newChildren.Add(children[i]);
+                newChildren.Add(child);
             }
             else
             {
@@ -176,7 +175,7 @@ public static class MarkdownParser
                                    LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                    LinkedList<DelimiterNode> delimiterStack)
     {
-        int starCount = 1;
+        var starCount = 1;
         int j;
         for (j = i + 1; j < text.Length; j++)
         {
@@ -190,43 +189,41 @@ public static class MarkdownParser
             }
         }
 
-        bool followedByWhitespace = j == text.Length || text[j].IsUnicodeWhiteSpace() || text[j].IsLineEnding();
-        bool followedByPunctation = j != text.Length && text[j].IsUnicodePunctuation();
-        bool precededByWhitespace = i == 0 || text[i - 1].IsUnicodeWhiteSpace() || text[i - 1].IsLineEnding();
-        bool precededByPunctation = i != 0 && text[i - 1].IsUnicodePunctuation();
+        var followedByWhitespace = j == text.Length || text[j].IsUnicodeWhiteSpace() || text[j].IsLineEnding();
+        var followedByPunctuation = j != text.Length && text[j].IsUnicodePunctuation();
+        var precededByWhitespace = i == 0 || text[i - 1].IsUnicodeWhiteSpace() || text[i - 1].IsLineEnding();
+        var precededByPunctuation = i != 0 && text[i - 1].IsUnicodePunctuation();
 
-        bool isLeftFlankingDelimiterRun = !followedByWhitespace
-                                          && (!followedByPunctation || precededByWhitespace || precededByPunctation);
+        var isLeftFlankingDelimiterRun = !followedByWhitespace
+                                         && (!followedByPunctuation || precededByWhitespace || precededByPunctuation);
 
-        bool isRightFlankingDelimiterRun = !precededByWhitespace
-                                           && (!precededByPunctation || followedByWhitespace || followedByPunctation);
+        var isRightFlankingDelimiterRun = !precededByWhitespace
+                                          && (!precededByPunctuation || followedByWhitespace || followedByPunctuation);
 
         if (!isLeftFlankingDelimiterRun && !isRightFlankingDelimiterRun)
         {
             i = j - 1;
             return;
         }
-        else
+        
+        if (textBegin != i)
         {
-            if (textBegin != i)
-            {
-                textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-            }
-
-            textNodes.AddLast((i, new Text(text[i..j].ToString())));
-            textBegin = j;
-            i = textBegin - 1;
-
-            var node = new DelimiterNode
-            {
-                Number = starCount,
-                TextNode = textNodes.Last!,
-                Type = (isLeftFlankingDelimiterRun ? DelimiterType.Open : DelimiterType.None)
-                     | (isRightFlankingDelimiterRun ? DelimiterType.Closing : DelimiterType.None)
-                     | DelimiterType.Star
-            };
-            delimiterStack.AddLast(node);
+            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
         }
+
+        textNodes.AddLast((i, new Text(text[i..j].ToString())));
+        textBegin = j;
+        i = textBegin - 1;
+
+        var node = new DelimiterNode
+        {
+            Number = starCount,
+            TextNode = textNodes.Last!,
+            Type = (isLeftFlankingDelimiterRun ? DelimiterType.Open : DelimiterType.None)
+                   | (isRightFlankingDelimiterRun ? DelimiterType.Closing : DelimiterType.None)
+                   | DelimiterType.Star
+        };
+        delimiterStack.AddLast(node);
     }
 
     private static void ProcessUnderscore(ReadOnlySpan<char> text,
@@ -235,7 +232,7 @@ public static class MarkdownParser
                                          LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                          LinkedList<DelimiterNode> delimiterStack)
     {
-        int underscoreCount = 1;
+        var underscoreCount = 1;
         int j;
         for (j = i + 1; j < text.Length; j++)
         {
@@ -249,49 +246,47 @@ public static class MarkdownParser
             }
         }
 
-        bool followedByWhitespace = j == text.Length || text[j].IsUnicodeWhiteSpace() || text[j].IsLineEnding();
-        bool followedByPunctation = j != text.Length && text[j].IsUnicodePunctuation();
-        bool precededByWhitespace = i == 0 || text[i - 1].IsUnicodeWhiteSpace() || text[i - 1].IsLineEnding();
-        bool precededByPunctation = i != 0 && text[i - 1].IsUnicodePunctuation();
+        var followedByWhitespace = j == text.Length || text[j].IsUnicodeWhiteSpace() || text[j].IsLineEnding();
+        var followedByPunctuation = j != text.Length && text[j].IsUnicodePunctuation();
+        var precededByWhitespace = i == 0 || text[i - 1].IsUnicodeWhiteSpace() || text[i - 1].IsLineEnding();
+        var precededByPunctuation = i != 0 && text[i - 1].IsUnicodePunctuation();
 
-        bool isLeftFlankingDelimiterRun = !followedByWhitespace
-                                          && (!followedByPunctation || precededByWhitespace || precededByPunctation);
+        var isLeftFlankingDelimiterRun = !followedByWhitespace
+                                         && (!followedByPunctuation || precededByWhitespace || precededByPunctuation);
 
-        bool isRightFlankingDelimiterRun = !precededByWhitespace
-                                           && (!precededByPunctation || followedByWhitespace || followedByPunctation);
+        var isRightFlankingDelimiterRun = !precededByWhitespace
+                                          && (!precededByPunctuation || followedByWhitespace || followedByPunctuation);
 
         if (!isLeftFlankingDelimiterRun && !isRightFlankingDelimiterRun)
         {
             i = j - 1;
             return;
         }
-        else
+        
+        if (textBegin != i)
         {
-            if (textBegin != i)
-            {
-                textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-            }
+            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
+        }
 
-            textNodes.AddLast((i, new Text(text[i..j].ToString())));
-            textBegin = j;
-            i = textBegin - 1;
+        textNodes.AddLast((i, new Text(text[i..j].ToString())));
+        textBegin = j;
+        i = textBegin - 1;
 
-            var node = new DelimiterNode
-            {
-                Number = underscoreCount,
-                TextNode = textNodes.Last!,
-                Type = (isLeftFlankingDelimiterRun && (!isRightFlankingDelimiterRun || precededByPunctation)
+        var node = new DelimiterNode
+        {
+            Number = underscoreCount,
+            TextNode = textNodes.Last!,
+            Type = (isLeftFlankingDelimiterRun && (!isRightFlankingDelimiterRun || precededByPunctuation)
                        ? DelimiterType.Open
                        : DelimiterType.None)
 
-                     | (isRightFlankingDelimiterRun && (!isLeftFlankingDelimiterRun || followedByPunctation)
+                   | (isRightFlankingDelimiterRun && (!isLeftFlankingDelimiterRun || followedByPunctuation)
                        ? DelimiterType.Closing
                        : DelimiterType.None)
 
-                     | DelimiterType.Underscore
-            };
-            delimiterStack.AddLast(node);
-        }
+                   | DelimiterType.Underscore
+        };
+        delimiterStack.AddLast(node);
     }
 
 
@@ -363,7 +358,7 @@ public static class MarkdownParser
     {
         foreach (var parser in parsers)
         {
-            int length = parser.TryReadAndParse(text[i..], out var inline);
+            var length = parser.TryReadAndParse(text[i..], out var inline);
             if (length is not 0)
             {
                 if (textBegin != i)
@@ -399,7 +394,7 @@ public static class MarkdownParser
         }
     }
 
-    private static void DeactiveLinks(LinkedListNode<DelimiterNode> node)
+    private static void DeactivateLinks(LinkedListNode<DelimiterNode> node)
     {
         while (node.Previous is not null)
         {
@@ -462,7 +457,7 @@ public static class MarkdownParser
 
         RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactiveLinks(openDelimiterNode);
+        DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
         return true;
     }
@@ -562,7 +557,7 @@ public static class MarkdownParser
 
         RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactiveLinks(openDelimiterNode);
+        DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
     }
 
@@ -617,8 +612,8 @@ public static class MarkdownParser
                                                  LinkedList<DelimiterNode> delimiterStack,
                                                  Dictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
-        int labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
-        string label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
+        var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
+        var label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
 
         if (definitionDictionary.TryGetValue(label, out var definition) is false)
         {
@@ -642,7 +637,7 @@ public static class MarkdownParser
 
         RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactiveLinks(openDelimiterNode);
+        DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
     }
 
@@ -654,8 +649,8 @@ public static class MarkdownParser
                                                  LinkedList<DelimiterNode> delimiterStack,
                                                  Dictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
-        int labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
-        string label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
+        var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
+        var label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
 
         if (definitionDictionary.TryGetValue(label, out var definition) is false)
         {
@@ -691,8 +686,8 @@ public static class MarkdownParser
                                                      LinkedList<DelimiterNode> delimiterStack,
                                                      Dictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
-        int labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
-        string label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
+        var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
+        var label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
 
         if (definitionDictionary.TryGetValue(label, out var definition) is false)
         {
@@ -716,7 +711,7 @@ public static class MarkdownParser
 
         RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactiveLinks(openDelimiterNode);
+        DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
     }
 
@@ -728,8 +723,8 @@ public static class MarkdownParser
                                                       LinkedList<DelimiterNode> delimiterStack,
                                                       Dictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
-        int labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
-        string label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
+        var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
+        var label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
 
         if (definitionDictionary.TryGetValue(label, out var definition) is false)
         {
@@ -843,8 +838,8 @@ public static class MarkdownParser
         var delimiterStack = new LinkedList<DelimiterNode>();
         var definitionDictionary = GetReferenceDictionary(definitions);
 
-        int textBegin = 0;
-        for (int i = 0; i < text.Length; i++)
+        var textBegin = 0;
+        for (var i = 0; i < text.Length; i++)
         {
             if (ProcessLeafInline(text, ref i, ref textBegin, textNodes, parsers)) continue;
 
@@ -896,11 +891,11 @@ public static class MarkdownParser
                                         LinkedList<DelimiterNode> delimiterStack,
                                         LinkedListNode<DelimiterNode>? stackBottom)
     {
-        LinkedListNode<DelimiterNode>? currentPosition = stackBottom == null ? delimiterStack.First : stackBottom.Next;
+        var currentPosition = stackBottom == null ? delimiterStack.First : stackBottom.Next;
         var openersBottomStar = stackBottom;
         var openersBottomUnderscore = stackBottom;
 
-        bool multipleOfThree = false;
+        var multipleOfThree = false;
 
         while (currentPosition is not null)
         {
@@ -920,9 +915,9 @@ public static class MarkdownParser
             while (opener != stackBottom && opener != openersBottom)
             {
                 if (opener!.Value.Type.HasFlag(DelimiterType.Open) is false
-                    || IsSameDelimiter(opener!.Value, currentPosition.Value) is false)
+                    || IsSameDelimiter(opener.Value, currentPosition.Value) is false)
                 {
-                    opener = opener!.Previous;
+                    opener = opener.Previous;
                     continue;
                 }
 
@@ -934,18 +929,14 @@ public static class MarkdownParser
                     var lengthEnd = ((Text)currentPosition.Value.TextNode.Value.Inline).Content.Length;
                     if ((lengthStart + lengthEnd) % 3 is 0 && (lengthStart % 3 is not 0 || lengthEnd % 3 is not 0))
                     {
-                        opener = opener!.Previous;
+                        opener = opener.Previous;
                         multipleOfThree = true;
                         continue;
                     }
                 }
 
                 // found
-                bool isStrong = false;
-                if (opener.Value.Number >= 2 && currentPosition.Value.Number >= 2)
-                {
-                    isStrong = true;
-                }
+                var isStrong = opener.Value.Number >= 2 && currentPosition.Value.Number >= 2;
 
                 var emphasis = new Emphasis(isStrong);
 
@@ -959,9 +950,9 @@ public static class MarkdownParser
                     textNodes.AddAfter(node, (0, emphasis));
                 }
 
-                for (var node = opener; node!.Next != currentPosition;)
+                for (var node = opener; node.Next != currentPosition;)
                 {
-                    delimiterStack.Remove(node!.Next!);
+                    delimiterStack.Remove(node.Next!);
                 }
 
                 opener.ValueRef.Number -= isStrong ? 2 : 1;

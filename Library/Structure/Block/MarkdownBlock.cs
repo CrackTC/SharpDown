@@ -1,22 +1,16 @@
 ﻿using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using CrackTC.SharpDown.Structure;
 using CrackTC.SharpDown.Structure.Block.Leaf;
 
 namespace CrackTC.SharpDown.Structure.Block;
 
 public abstract class MarkdownBlock : MarkdownNode
 {
-    protected List<MarkdownNode> _children = new();
-    public List<MarkdownNode> Children
-    {
-        get => _children;
-        set => _children = value;
-    }
+    public List<MarkdownNode> Children { get; set; } = new();
 
     internal MarkdownNode? LastChild
     {
-        get => _children.Count is 0 ? null : _children[^1];
-        set => _children[^1] = value!;
+        get => Children.Count is 0 ? null : Children[^1];
+        set => Children[^1] = value!;
     }
 
     internal abstract void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,

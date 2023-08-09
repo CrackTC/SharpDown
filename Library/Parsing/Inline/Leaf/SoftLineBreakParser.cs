@@ -9,14 +9,11 @@ internal class SoftLineBreakParser : IMarkdownLeafInlineParser
     {
         inline = null;
         if (text.IsEmpty) return 0;
-        if (text[0].IsLineEnding() || text[0].IsSpace() && text.Length > 1 && text[1].IsLineEnding())
-        {
-            _ = TextUtils.ReadLine(text, out var remaining, out _, out _);
-            var rightSpaceCount = remaining.CountLeadingChracter(ch => ch.IsSpace() || ch.IsTab());
-            inline = new SoftLineBreak();
-            remaining = remaining[rightSpaceCount..];
-            return text.Length - remaining.Length;
-        }
-        return 0;
+        if (!text[0].IsLineEnding() && (!text[0].IsSpace() || text.Length <= 1 || !text[1].IsLineEnding())) return 0;
+        _ = TextUtils.ReadLine(text, out var remaining, out _, out _);
+        var rightSpaceCount = remaining.CountLeadingCharacter(ch => ch.IsSpace() || ch.IsTab());
+        inline = new SoftLineBreak();
+        remaining = remaining[rightSpaceCount..];
+        return text.Length - remaining.Length;
     }
 }

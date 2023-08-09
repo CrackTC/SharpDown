@@ -7,11 +7,11 @@ var json = JsonSerializer.Deserialize<JsonNode>(testCases);
 
 foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["example"]! >= 0))
 {
-    int id = (int)testCase!["example"]!;
-    string markdown = testCase!["markdown"]!.ToString();
-    string answer = testCase!["html"]!.ToString();
+    var id = (int)testCase!["example"]!;
+    var markdown = testCase["markdown"]!.ToString();
+    var answer = testCase["html"]!.ToString();
     var result = MarkdownParser.Parse(markdown);
-    string output = result.ToHtml();
+    var output = result.ToHtml();
     if (answer.Equals(output) is false)
     {
         Console.ForegroundColor = ConsoleColor.White;

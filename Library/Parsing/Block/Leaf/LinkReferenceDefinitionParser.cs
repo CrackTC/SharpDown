@@ -1,13 +1,11 @@
-﻿using CrackTC.SharpDown.Parsing;
-using CrackTC.SharpDown.Parsing.Block;
-using CrackTC.SharpDown.Structure.Block;
+﻿using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Leaf;
 
 namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 
 internal class LinkReferenceDefinitionParser : IMarkdownBlockParser
 {
-    public static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text,
+    private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text,
                                           out string label,
                                           out string destination,
                                           out string title)
@@ -15,7 +13,7 @@ internal class LinkReferenceDefinitionParser : IMarkdownBlockParser
         label = destination = title = string.Empty;
 
         var tmp = text;
-        int columnNumber = tmp.ReadColumnNumber();
+        var columnNumber = tmp.ReadColumnNumber();
         var (count, index, _) = tmp.CountLeadingSpace(columnNumber, 4);
         if (count is 4) return text;
 

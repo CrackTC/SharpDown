@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -10,18 +9,18 @@ namespace CrackTC.SharpDown.Parsing;
 
 internal static class TextUtils
 {
-    public const char Tab = '\u0009';
+    private const char Tab = '\u0009';
     public const char Space = '\u0020';
-    public const char LineFeed = '\u000a';
-    public const char FormFeed = '\u000c';
-    public const char CarriageReturn = '\u000d';
+    private const char LineFeed = '\u000a';
+    private const char FormFeed = '\u000c';
+    private const char CarriageReturn = '\u000d';
 
     public static bool IsTab(this char character) => character is Tab;
     public static bool IsSpace(this char character) => character is Space;
-    public static bool IsInZs(this char character) => char.GetUnicodeCategory(character) is UnicodeCategory.SpaceSeparator;
-    public static bool IsLineFeed(this char character) => character is LineFeed;
-    public static bool IsFormFeed(this char character) => character is FormFeed;
-    public static bool IsCarriageReturn(this char character) => character is CarriageReturn;
+    private static bool IsInZs(this char character) => char.GetUnicodeCategory(character) is UnicodeCategory.SpaceSeparator;
+    private static bool IsLineFeed(this char character) => character is LineFeed;
+    private static bool IsFormFeed(this char character) => character is FormFeed;
+    private static bool IsCarriageReturn(this char character) => character is CarriageReturn;
     public static bool IsBlankLine(this ReadOnlySpan<char> line)
     {
         line = ReadLine(line, out _, out _, out _);
@@ -58,9 +57,9 @@ internal static class TextUtils
         character.IsLineFeed() ||
         character.IsFormFeed() ||
         character.IsCarriageReturn();
-    public static bool IsAsciiControl(this char character) =>
-        character is '\u007f'
-            or >= '\u0000' and <= '\u001f';
+
+    private static bool IsAsciiControl(this char character) =>
+        character is '\u007f' or >= '\u0000' and <= '\u001f';
     public static bool IsAsciiPunctuation(this char character) =>
         character is >= '\u0021' and <= '\u002f'
                   or >= '\u003a' and <= '\u0040'
@@ -79,7 +78,7 @@ internal static class TextUtils
 
     public static bool TryRemoveTagInnerSpaces(this ref ReadOnlySpan<char> text)
     {
-        var index = text.CountLeadingChracter(ch => ch.IsSpace() || ch.IsTab());
+        var index = text.CountLeadingCharacter(ch => ch.IsSpace() || ch.IsTab());
 
         var tmp = text[index..];
         if (tmp.TryRemoveLineEnding())
@@ -90,7 +89,7 @@ internal static class TextUtils
                 return true;
             }
 
-            index = tmp.CountLeadingChracter(ch => ch.IsSpace() || ch.IsTab());
+            index = tmp.CountLeadingCharacter(ch => ch.IsSpace() || ch.IsTab());
             if (tmp[index].IsLineEnding())
             {
                 return false;
@@ -132,159 +131,91 @@ internal static class TextUtils
         }
     }
 
-    public static bool TryReadAttributeName(this ref ReadOnlySpan<char> text, out string attributeName)
+    private static bool TryReadAttributeName(this ref ReadOnlySpan<char> text)
     {
-        attributeName = string.Empty;
+        if (text.IsEmpty) return false;
 
-        if (text.IsEmpty)
+        if (!char.IsAsciiLetter(text[0]) && text[0] is not ('_' or ':')) return false;
+        
+        int i;
+        for (i = 1; i < text.Length; i++)
+            if (!(char.IsAsciiLetter(text[i]) || char.IsAsciiDigit(text[i]) || text[i] is '_' or '.' or ':' or '-'))
+                break;
+
+        text = text[i..];
+        return true;
+    }
+
+    private static bool TryReadUnquotedAttributeValue(this ref ReadOnlySpan<char> text)
+    {
+        for (var i = 0; i < text.Length; i++)
         {
-            return false;
-        }
-
-        if (char.IsAsciiLetter(text[0]) || text[0] is '_' or ':')
-        {
-            int i;
-            for (i = 1; i < text.Length; i++)
-            {
-                if (!(char.IsAsciiLetter(text[i]) || char.IsAsciiDigit(text[i]) || text[i] is '_' or '.' or ':' or '-'))
-                {
-                    break;
-                }
-            }
-
-            attributeName = text[..i].ToString();
+            var ch = text[i];
+            if (!ch.IsSpace() && !ch.IsTab() && !ch.IsLineEnding() &&
+                ch is not ('"' or '\'' or '=' or '<' or '>' or '`')) continue;
+            if (i == 0) return false;
             text = text[i..];
             return true;
         }
-        else
-        {
-            return false;
-        }
-    }
-
-    public static bool TryReadUnquotedAttributeValue(this ref ReadOnlySpan<char> text, out string unquotedAttributeValue)
-    {
-        unquotedAttributeValue = string.Empty;
-        for (int i = 0; i < text.Length; i++)
-        {
-            var ch = text[i];
-            if (ch.IsSpace() || ch.IsTab() || ch.IsLineEnding() || ch is '"' or '\'' or '=' or '<' or '>' or '`')
-            {
-                if (i == 0)
-                {
-                    return false;
-                }
-                unquotedAttributeValue = text[..i].ToString();
-                text = text[i..];
-                return true;
-            }
-        }
-
         return false;
     }
 
-    public static bool TryReadSingleQuotedAttributeValue(this ref ReadOnlySpan<char> text, out string singleQuotedAttributeValue)
+    private static bool TryReadSingleQuotedAttributeValue(this ref ReadOnlySpan<char> text)
     {
-        singleQuotedAttributeValue = string.Empty;
-        if (text.StartsWith("'") is false)
-        {
-            return false;
-        }
+        if (text.StartsWith("'") is false) return false;
 
-        for (int i = 1; i < text.Length; i++)
+        for (var i = 1; i < text.Length; i++)
         {
-            if (text[i] is '\'')
-            {
-                singleQuotedAttributeValue = text[..(i + 1)].ToString();
-                text = text[(i + 1)..];
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static bool TryReadDoubleQuotedAttributeValue(this ref ReadOnlySpan<char> text, out string doubleQuotedAttributeValue)
-    {
-        doubleQuotedAttributeValue = string.Empty;
-        if (text.StartsWith("\"") is false)
-        {
-            return false;
-        }
-
-        for (int i = 1; i < text.Length; i++)
-        {
-            if (text[i] is '"')
-            {
-                doubleQuotedAttributeValue = text[..(i + 1)].ToString();
-                text = text[(i + 1)..];
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static bool TryReadAttributeValue(this ref ReadOnlySpan<char> text, out string attributeValue)
-    {
-        if (text.TryReadUnquotedAttributeValue(out attributeValue))
-        {
-            return true;
-        }
-        else if (text.TryReadSingleQuotedAttributeValue(out attributeValue))
-        {
-            return true;
-        }
-        else if (text.TryReadDoubleQuotedAttributeValue(out attributeValue))
-        {
+            if (text[i] is not '\'') continue;
+            text = text[(i + 1)..];
             return true;
         }
 
         return false;
     }
 
-    public static bool TryReadAttributeValueSpecification(this ref ReadOnlySpan<char> text, out string attributeValueSpecification)
+    private static bool TryReadDoubleQuotedAttributeValue(this ref ReadOnlySpan<char> text)
     {
-        attributeValueSpecification = string.Empty;
+        if (text.StartsWith("\"") is false) return false;
 
+        for (var i = 1; i < text.Length; i++)
+        {
+            if (text[i] is not '"') continue;
+            text = text[(i + 1)..];
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryReadAttributeValue(this ref ReadOnlySpan<char> text)
+    {
+        if (text.TryReadUnquotedAttributeValue()) return true;
+        return text.TryReadSingleQuotedAttributeValue() || text.TryReadDoubleQuotedAttributeValue();
+    }
+
+    private static void TryReadAttributeValueSpecification(this ref ReadOnlySpan<char> text)
+    {
         var tmp = text;
-        if (tmp.TryRemoveTagInnerSpaces() is false)
-        {
-            return false;
-        }
-        if (tmp.StartsWith("=") is false)
-        {
-            return false;
-        }
+        if (tmp.TryRemoveTagInnerSpaces() is false) return;
+        if (tmp.StartsWith("=") is false) return;
 
         tmp = tmp[1..];
-        if (tmp.TryRemoveTagInnerSpaces() is false)
-        {
-            return false;
-        }
+        if (tmp.TryRemoveTagInnerSpaces() is false) return;
 
-        if (tmp.TryReadAttributeValue(out _))
-        {
-            attributeValueSpecification = text[..(text.Length - tmp.Length)].ToString();
-            text = tmp;
-            return true;
-        }
-
-        return false;
+        if (!tmp.TryReadAttributeValue()) return;
+        text = tmp;
     }
 
-    public static bool TryReadAttribute(this ref ReadOnlySpan<char> text, out string attribute)
+    private static bool TryReadAttribute(this ref ReadOnlySpan<char> text)
     {
-        attribute = string.Empty;
-
         var tmp = text;
         if (tmp.TryRemoveTagInnerSpaces() is false) return false;
         if (tmp == text) return false;
-        if (tmp.TryReadAttributeName(out _) is false) return false;
+        if (tmp.TryReadAttributeName() is false) return false;
 
-        tmp.TryReadAttributeValueSpecification(out _);
+        tmp.TryReadAttributeValueSpecification();
 
-        attribute = text[..(text.Length - tmp.Length)].ToString();
         text = tmp;
         return true;
     }
@@ -306,7 +237,7 @@ internal static class TextUtils
             return false;
         }
 
-        while (tmp.TryReadAttribute(out _)) ;
+        while (tmp.TryReadAttribute()) { }
 
         if (tmp.TryRemoveTagInnerSpaces() is false)
         {
@@ -325,7 +256,7 @@ internal static class TextUtils
 
         tmp = tmp[1..];
 
-        tag = text[..(text.Length - tmp.Length)].ToString();
+        tag = text[..^tmp.Length].ToString();
         text = tmp;
         return true;
     }
@@ -359,7 +290,7 @@ internal static class TextUtils
 
         tmp = tmp[1..];
 
-        tag = text[..(text.Length - tmp.Length)].ToString();
+        tag = text[..^tmp.Length].ToString();
         text = tmp;
         return true;
     }
@@ -372,7 +303,7 @@ internal static class TextUtils
             return false;
         }
 
-        int endIndex = text[4..].IndexOf("-->") + 4;
+        var endIndex = text[4..].IndexOf("-->") + 4;
         if (endIndex is 3)
         {
             tag = string.Empty;
@@ -402,7 +333,7 @@ internal static class TextUtils
             return false;
         }
 
-        int endIndex = text[2..].IndexOf("?>") + 2;
+        var endIndex = text[2..].IndexOf("?>") + 2;
         if (endIndex is 1)
         {
             tag = string.Empty;
@@ -428,7 +359,7 @@ internal static class TextUtils
             return false;
         }
 
-        int endIndex = text.IndexOf('>');
+        var endIndex = text.IndexOf('>');
         if (endIndex is -1)
         {
             tag = string.Empty;
@@ -440,7 +371,7 @@ internal static class TextUtils
         return true;
     }
 
-    public static bool TryReadCDATASection(this ref ReadOnlySpan<char> text, out string tag)
+    public static bool TryReadCdataSection(this ref ReadOnlySpan<char> text, out string tag)
     {
         if (text.StartsWith("<![CDATA[") is false)
         {
@@ -448,7 +379,7 @@ internal static class TextUtils
             return false;
         }
 
-        int endIndex = text.IndexOf("]]>");
+        var endIndex = text.IndexOf("]]>");
         if (endIndex is -1)
         {
             tag = string.Empty;
@@ -491,7 +422,7 @@ internal static class TextUtils
         return true;
     }
 
-    public static bool TryReadWrappedLinkDestination(this ref ReadOnlySpan<char> text, out string destination)
+    private static bool TryReadWrappedLinkDestination(this ref ReadOnlySpan<char> text, out string destination)
     {
         destination = string.Empty;
 
@@ -522,7 +453,7 @@ internal static class TextUtils
         return true;
     }
 
-    public static bool TryReadUnwrappedLinkDestination(this ref ReadOnlySpan<char> text, out string destination)
+    private static bool TryReadUnwrappedLinkDestination(this ref ReadOnlySpan<char> text, out string destination)
     {
         destination = string.Empty;
 
@@ -531,7 +462,7 @@ internal static class TextUtils
             return false;
         }
 
-        int index = 0;
+        var index = 0;
         while (index < text.Length)
         {
             var ch = text[index];
@@ -554,7 +485,7 @@ internal static class TextUtils
             return false;
         }
 
-        int matchCount = 0;
+        var matchCount = 0;
         index = 0;
         while (index < destination.Length)
         {
@@ -601,7 +532,7 @@ internal static class TextUtils
         => text.TryReadWrappedLinkDestination(out destination)
         || text.TryReadUnwrappedLinkDestination(out destination);
 
-    public static bool TryReadDoubleQuotedLinkTitle(this ref ReadOnlySpan<char> text, out string title)
+    private static bool TryReadDoubleQuotedLinkTitle(this ref ReadOnlySpan<char> text, out string title)
     {
         title = string.Empty;
 
@@ -620,7 +551,7 @@ internal static class TextUtils
         return true;
     }
 
-    public static bool TryReadSingleQuotedLinkTitle(this ref ReadOnlySpan<char> text, out string title)
+    private static bool TryReadSingleQuotedLinkTitle(this ref ReadOnlySpan<char> text, out string title)
     {
         title = string.Empty;
 
@@ -639,7 +570,7 @@ internal static class TextUtils
         return true;
     }
 
-    public static bool TryReadWrappedLinkTitle(this ref ReadOnlySpan<char> text, out string title)
+    private static bool TryReadWrappedLinkTitle(this ref ReadOnlySpan<char> text, out string title)
     {
         title = string.Empty;
 
@@ -729,10 +660,12 @@ internal static class TextUtils
     /// </summary>
     /// <param name="text">The char span where the line should be read from.</param>
     /// <param name="remaining">The remaining text.</param>
+    /// <param name="columnNumber">Column number of line start.</param>
+    /// <param name="markedAsParagraph">Whether the line is explicitly marked as paragraph.</param>
     /// <returns></returns>
     public static ReadOnlySpan<char> ReadLine(ReadOnlySpan<char> text, out ReadOnlySpan<char> remaining, out int columnNumber, out bool markedAsParagraph)
     {
-        int index = 0;
+        var index = 0;
         for (var tmp = text; tmp.IsEmpty is false; tmp = tmp[1..], index++)
         {
             if (tmp.TryRemoveLineEnding())
@@ -762,9 +695,9 @@ internal static class TextUtils
         return text;
     }
 
-    public static int CountLeadingChracter(this ReadOnlySpan<char> text, Predicate<char> predicate, int limit = int.MaxValue)
+    public static int CountLeadingCharacter(this ReadOnlySpan<char> text, Predicate<char> predicate, int limit = int.MaxValue)
     {
-        int index = 0;
+        var index = 0;
         while (index < text.Length && predicate(text[index]))
         {
             index++;
@@ -776,9 +709,9 @@ internal static class TextUtils
         return index;
     }
 
-    public static int CountTrailingChracter(this ReadOnlySpan<char> text, Predicate<char> predicate, int limit = int.MaxValue)
+    public static int CountTrailingCharacter(this ReadOnlySpan<char> text, Predicate<char> predicate, int limit = int.MaxValue)
     {
-        int index = 1;
+        var index = 1;
         while (index <= text.Length && predicate(text[^index]))
         {
             index++;
@@ -796,8 +729,8 @@ internal static class TextUtils
     }
     public static (int Count, int Index, int TabRemainingSpaces) CountLeadingSpace(this ReadOnlySpan<char> text, int columnNumber, int limit)
     {
-        int index = 0;
-        int count = 0;
+        var index = 0;
+        var count = 0;
         foreach (var ch in text)
         {
             if (count >= limit) return (limit, index, count - limit);
@@ -815,8 +748,8 @@ internal static class TextUtils
 
     public static ReadOnlySpan<char> TrimTabAndSpace(this ReadOnlySpan<char> text)
     {
-        int start = 0;
-        int end = text.Length;
+        var start = 0;
+        var end = text.Length;
         while (start < text.Length && (text[start].IsSpace() || text[start].IsTab()))
         {
             start++;
@@ -839,10 +772,9 @@ internal static class TextUtils
 
         var builder = new StringBuilder(label.Length);
 
-        bool spaceOpen = false;
-        for (int i = 0; i < label.Length; i++)
+        var spaceOpen = false;
+        foreach (var ch in label)
         {
-            var ch = label[i];
             if (ch.IsSpace() || ch.IsTab() || ch.IsLineEnding())
             {
                 spaceOpen = true;
@@ -861,29 +793,19 @@ internal static class TextUtils
         return builder.ToString();
     }
 
-    public static bool TryReadUtilUnescaped(this ref ReadOnlySpan<char> text, char ending, out string content)
+    private static bool TryReadUtilUnescaped(this ref ReadOnlySpan<char> text, char ending, out string content)
     {
         var builder = new StringBuilder();
         var tmp = text;
         while (!tmp.IsEmpty)
         {
             var line = ReadLine(tmp, out var remaining, out _, out _);
-            for (int i = 0; i < line.Length; i++)
+            for (var i = 0; i < line.Length; i++)
             {
                 if (line[i] == '\\')
                 {
-                    if (i < line.Length - 1)
-                    {
-                        if (line[i + 1].IsAsciiPunctuation())
-                        {
-                            i++;
-                            continue;
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
+                    if (i >= line.Length - 1) continue;
+                    if (line[i + 1].IsAsciiPunctuation()) i++;
                 }
                 else if (line[i] == ending)
                 {
@@ -906,7 +828,7 @@ internal static class TextUtils
     public static string Unescape(this string text)
     {
         var builder = new StringBuilder(text.Length);
-        for (int i = 0; i < text.Length; i++)
+        for (var i = 0; i < text.Length; i++)
         {
             if (text[i] != '\\' || i == text.Length - 1 || text[i + 1].IsAsciiPunctuation() is false)
             {
@@ -935,12 +857,10 @@ internal static class TextUtils
             switch (node)
             {
                 case XText text:
-                    builder.Append(text.ToString());
+                    builder.Append(text);
                     break;
                 case XElement childElement:
                     builder.Append(childElement.FlattenText());
-                    break;
-                default:
                     break;
             }
         }
@@ -953,7 +873,7 @@ internal static class TextUtils
         return System.Security.SecurityElement.Escape(text);
     }
 
-    private static readonly Dictionary<string, string> entityDictionary;
+    private static readonly Dictionary<string, string> EntityDictionary;
 
     public static string HtmlUnescape(this ReadOnlySpan<char> text)
     {
@@ -971,13 +891,14 @@ internal static class TextUtils
                 i++;
                 continue;
             }
-            else if (text[i] == '&')
+
+            if (text[i] == '&')
             {
                 while (node != null && node.Value < i) node = node.Next;
                 if (node == null) break;
 
-                bool numeric = false;
-                bool hex = false;
+                var numeric = false;
+                var hex = false;
                 if (text[i + 1] == '#') // numeric
                 {
                     numeric = true;
@@ -997,7 +918,7 @@ internal static class TextUtils
                         }
                     }
                     else if (node.Value - (i + 2) is < 1 or > 7
-                            || !int.TryParse(text[(i + 2)..node.Value], NumberStyles.None, null, out codePoint))
+                             || !int.TryParse(text[(i + 2)..node.Value], NumberStyles.None, null, out codePoint))
                     {
                         builder.Append('&');
                         continue;
@@ -1007,22 +928,15 @@ internal static class TextUtils
                     i = node.Value;
                     node = node.Next;
                 }
-                else if (entityDictionary.TryGetValue(text[i..(node.Value + 1)].ToString(), out string? characters))
+                else if (EntityDictionary.TryGetValue(text[i..(node.Value + 1)].ToString(), out var characters))
                 {
                     builder.Append(characters);
                     i = node.Value;
                     node = node.Next;
                 }
-                else
-                {
-                    builder.Append('&');
-                    continue;
-                }
+                else builder.Append('&');
             }
-            else
-            {
-                builder.Append(text[i]);
-            }
+            else builder.Append(text[i]);
         }
 
         builder.Append(text[i..]);
@@ -1044,8 +958,8 @@ internal static class TextUtils
 
     public static int ReadColumnNumber(this ref ReadOnlySpan<char> heading)
     {
-        int k = 1;
-        int result = 0;
+        var k = 1;
+        var result = 0;
 
         while (heading.IsEmpty is false && heading[0] == '\0')
         {
@@ -1059,12 +973,12 @@ internal static class TextUtils
 
     static TextUtils()
     {
-        entityDictionary = new();
+        EntityDictionary = new();
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CrackTC.SharpDown.Parsing.entities.json")!;
         var node = JsonSerializer.Deserialize<JsonNode>(stream)!;
         foreach (var item in node.AsObject())
         {
-            entityDictionary[item.Key] = (string)item.Value!["characters"]!;
+            EntityDictionary[item.Key] = (string)item.Value!["characters"]!;
         }
     }
 }

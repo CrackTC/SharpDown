@@ -1,15 +1,13 @@
 ﻿using CrackTC.SharpDown.Parsing;
-using CrackTC.SharpDown.Structure;
-using CrackTC.SharpDown.Structure.Inline;
 using System.Xml.Linq;
 
 namespace CrackTC.SharpDown.Structure.Inline.Nested
 {
     internal class Link : MarkdownInline
     {
-        public IEnumerable<MarkdownInline> Text { get; }
-        public string Destination { get; }
-        public string Title { get; }
+        private IEnumerable<MarkdownInline> Text { get; }
+        private string Destination { get; }
+        private string Title { get; }
 
         public Link(IEnumerable<MarkdownInline> text, string destination, string? title = null)
         {
@@ -32,9 +30,9 @@ namespace CrackTC.SharpDown.Structure.Inline.Nested
             return $"<a href=\"{Destination.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\" title=\"{Title.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\">{content}</a>";
         }
 
-        public override XElement? ToAST() => new(MarkdownRoot.Namespace + "link",
+        public override XElement ToAst() => new(MarkdownRoot.Namespace + "link",
                                                  new XAttribute("destination", Destination.Unescape()),
                                                  new XAttribute("title", Title.Unescape()),
-                                                 Text.Select(inline => inline.ToAST()));
+                                                 Text.Select(inline => inline.ToAst()));
     }
 }

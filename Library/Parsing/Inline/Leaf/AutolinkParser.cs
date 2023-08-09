@@ -1,10 +1,8 @@
 using System.Text.RegularExpressions;
-using CrackTC.SharpDown.Parsing;
-using CrackTC.SharpDown.Parsing.Inline.Leaf;
 using CrackTC.SharpDown.Structure.Inline;
 using CrackTC.SharpDown.Structure.Inline.Leaf;
 
-namespace CrackTC.SharpDown.Core.Parsing.Inline.Leaf;
+namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
 internal partial class AutolinkParser : IMarkdownLeafInlineParser
 {
@@ -40,7 +38,7 @@ internal partial class AutolinkParser : IMarkdownLeafInlineParser
             return false;
         }
 
-        int endIndex = text.IndexOf('>');
+        var endIndex = text.IndexOf('>');
         if (endIndex is -1)
         {
             link = null;

@@ -1,6 +1,4 @@
-﻿using CrackTC.SharpDown.Parsing;
-using CrackTC.SharpDown.Parsing.Block;
-using CrackTC.SharpDown.Structure.Block;
+﻿using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Leaf;
 using System.Text;
 
@@ -53,7 +51,7 @@ internal class IndentedCodeBlockParser : IMarkdownBlockParser
             var builder = new StringBuilder(block.Code.Length + code.Length);
 
             builder.Append(block.Code);
-            for (int j = i + 1; j < father.Children.Count; j++)
+            for (var j = i + 1; j < father.Children.Count; j++)
             {
                 var blankLineSpan = ((BlankLine)father.Children[j]).Content.AsSpan();
                 var (count, index, tabRemainingSpaces) = blankLineSpan.CountLeadingSpace(0, 4);
@@ -65,7 +63,7 @@ internal class IndentedCodeBlockParser : IMarkdownBlockParser
 
             block.Code = builder.ToString();
 
-            for (int j = i + 1; j < father.Children.Count; j++) father.Children.RemoveAt(father.Children.Count - 1);
+            for (var j = i + 1; j < father.Children.Count; j++) father.Children.RemoveAt(father.Children.Count - 1);
         }
         else father.Children.Add(new IndentedCodeBlock(code));
 

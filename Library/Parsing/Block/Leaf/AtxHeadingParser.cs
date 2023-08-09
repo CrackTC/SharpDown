@@ -11,7 +11,7 @@ internal class AtxHeadingParser : IMarkdownBlockParser
         level = 0;
         content = string.Empty;
 
-        var line = TextUtils.ReadLine(text, out var remaining, out int columnNumber, out _);
+        var line = TextUtils.ReadLine(text, out var remaining, out var columnNumber, out _);
 
         // leading spaces
         var (count, index, _) = line.CountLeadingSpace(columnNumber, 4);
@@ -19,18 +19,18 @@ internal class AtxHeadingParser : IMarkdownBlockParser
         line = line[index..];
 
         // level
-        level = line.CountLeadingChracter(ch => ch is AtxHeadingIndicator, 7);
+        level = line.CountLeadingCharacter(ch => ch is AtxHeadingIndicator, 7);
         if (level is 0 or 7) return text;
         line = line[level..];
         if (line.IsBlankLine()) return remaining; // blank heading
 
         // separator spaces
-        var spaceCount = line.CountLeadingChracter(ch => ch.IsSpace() || ch.IsTab());
+        var spaceCount = line.CountLeadingCharacter(ch => ch.IsSpace() || ch.IsTab());
         if (spaceCount is 0) return text;
         line = line[spaceCount..];
 
         // trailing indicators
-        spaceCount = line.CountTrailingChracter(ch => ch.IsSpace() || ch.IsTab());
+        spaceCount = line.CountTrailingCharacter(ch => ch.IsSpace() || ch.IsTab());
         while (spaceCount < line.Length && line[^(spaceCount + 1)] is AtxHeadingIndicator) spaceCount++;
         if (spaceCount == line.Length) return remaining; // blank heading
 
@@ -42,7 +42,7 @@ internal class AtxHeadingParser : IMarkdownBlockParser
         }
 
         line = line[..^spaceCount];
-        spaceCount = line.CountTrailingChracter(ch => ch.IsSpace() || ch.IsTab());
+        spaceCount = line.CountTrailingCharacter(c => c.IsSpace() || c.IsTab());
         content = line[..^spaceCount].ToString();
         return remaining;
     }

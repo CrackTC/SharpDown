@@ -19,7 +19,7 @@ internal class LinkReferenceDefinition : LeafBlock
     //public override XElement? ToHtml() => null;
     public override string ToHtml(bool tight) => string.Empty;
 
-    public override XElement? ToAST() => null;
+    public override XElement? ToAst() => null;
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
                                      IEnumerable<LinkReferenceDefinition> definitions)

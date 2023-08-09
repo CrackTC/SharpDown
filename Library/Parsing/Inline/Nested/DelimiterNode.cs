@@ -17,7 +17,7 @@ internal enum DelimiterType
 
 internal struct DelimiterNode
 {
-    public LinkedListNode<(int StartIndex, MarkdownInline Inline)> TextNode { get; set; }
+    public LinkedListNode<(int StartIndex, MarkdownInline Inline)> TextNode { get; init; }
     public DelimiterType Type { get; set; }
     public int Number { get; set; }
 }
