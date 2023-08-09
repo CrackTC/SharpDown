@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrackTC.SharpDown", "Librar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{0E0CD5C7-B80C-4CAB-A763-7CF52C25B601}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrackTC.SharpDown.Cli", "CrackTC.SharpDown.Cli\CrackTC.SharpDown.Cli.csproj", "{ACE6D0FC-FF3D-46C9-85D5-6411C540ACCB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrackTC.SharpDown.Cli", "CLI\CrackTC.SharpDown.Cli.csproj", "{D38167AE-A245-427A-82C7-98276F4AAB59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{0E0CD5C7-B80C-4CAB-A763-7CF52C25B601}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E0CD5C7-B80C-4CAB-A763-7CF52C25B601}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E0CD5C7-B80C-4CAB-A763-7CF52C25B601}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ACE6D0FC-FF3D-46C9-85D5-6411C540ACCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ACE6D0FC-FF3D-46C9-85D5-6411C540ACCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ACE6D0FC-FF3D-46C9-85D5-6411C540ACCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ACE6D0FC-FF3D-46C9-85D5-6411C540ACCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D38167AE-A245-427A-82C7-98276F4AAB59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D38167AE-A245-427A-82C7-98276F4AAB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D38167AE-A245-427A-82C7-98276F4AAB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D38167AE-A245-427A-82C7-98276F4AAB59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
