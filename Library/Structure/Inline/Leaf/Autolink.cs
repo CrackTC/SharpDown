@@ -14,16 +14,15 @@ internal class Autolink : MarkdownInline
         Label = label;
     }
 
-    //public override XElement? ToHtml() => new("a",
-    //                                          new XAttribute("href", Destination),
-    //                                          Label.ToHtml());
-    public override string ToHtml(bool tight)
+    internal override string ToHtml(bool tight)
     {
-        return $"<a href=\"{Destination.AsSpan().HtmlUnescape().HtmlEscape()}\">{Label.Content.AsSpan().HtmlUnescape().HtmlEscape()}</a>";
+        var destination = Destination.AsSpan().HtmlUnescape().HtmlEscape();
+        var label = Label.Content.AsSpan().HtmlUnescape().HtmlEscape();
+        return $"<a href=\"{destination}\">{label}</a>";
     }
 
     public override XElement ToAst() => new(MarkdownRoot.Namespace + "link",
-                                             new XAttribute("destination", Destination),
-                                             new XAttribute("title", string.Empty),
-                                             Label.ToAst());
+                                            new XAttribute("destination", Destination),
+                                            new XAttribute("title", string.Empty),
+                                            Label.ToAst());
 }

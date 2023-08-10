@@ -30,11 +30,8 @@ internal class CodeSpanParser : IMarkdownLeafInlineParser
 
     public int TryReadAndParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
     {
-        if (text.StartsWith("`") is false)
-        {
-            inline = null;
-            return 0;
-        }
+        inline = null;
+        if (text.StartsWith("`") is false) return 0;
 
         var backtickCount = 1;
         for (var i = 1; i < text.Length; i++)
@@ -55,7 +52,8 @@ internal class CodeSpanParser : IMarkdownLeafInlineParser
                     inline = new CodeSpan(NormalizeContent(content));
                     return i;
                 }
-                else closingBacktickCount = 0;
+
+                closingBacktickCount = 0;
             }
         }
 

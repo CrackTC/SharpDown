@@ -50,10 +50,7 @@ internal class AtxHeadingParser : IMarkdownBlockParser
     public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParser)
     {
         var remaining = Skip(text, out var level, out var content);
-        if (remaining == text)
-        {
-            return false;
-        }
+        if (remaining == text) return false;
 
         text = remaining;
         father.Children.Add(new AtxHeading(level, content));

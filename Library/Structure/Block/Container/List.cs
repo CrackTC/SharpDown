@@ -35,7 +35,7 @@ internal class List : ContainerBlock
                    content);
     }
 
-    public override string ToHtml(bool tight)
+    internal override string ToHtml(bool tight)
     {
         var content = string.Join('\n', Children.Select(child => child.ToHtml(!IsLoose)));
 

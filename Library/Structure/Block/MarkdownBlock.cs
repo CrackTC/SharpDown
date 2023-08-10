@@ -13,6 +13,8 @@ public abstract class MarkdownBlock : MarkdownNode
         set => Children[^1] = value!;
     }
 
-    internal abstract void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
-                                     IEnumerable<LinkReferenceDefinition> definitions);
+    internal virtual void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
+        IEnumerable<LinkReferenceDefinition> definitions)
+    {
+    }
 }

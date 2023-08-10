@@ -16,27 +16,18 @@ internal class Image : MarkdownInline
         Title = title ?? string.Empty;
     }
 
-    //public override XElement? ToHtml() => new("img",
-    //                                          new XAttribute("alt", string.Concat(Alternative.Select(inline => inline.ToAST().FlattenText()))),
-    //                                          new XAttribute("src", Source.Unescape()),
-    //                                          string.IsNullOrEmpty(Title) ? null : new XAttribute("title", Title.Unescape()));
-
-    public override string ToHtml(bool tight)
+    internal override string ToHtml(bool tight)
     {
         var src = Source.Unescape().HtmlEscape();
         var alt = string.Concat(Alternative.Select(inline => inline.ToAst().FlattenText())).HtmlEscape();
-        if (string.IsNullOrEmpty(Title))
-        {
-            return $"<img src=\"{src}\" alt=\"{alt}\" />";
-        }
-
+        if (string.IsNullOrEmpty(Title)) return $"<img src=\"{src}\" alt=\"{alt}\" />";
+        
         var title = Title.HtmlEscape();
         return $"<img src=\"{src}\" alt=\"{alt}\" title=\"{title}\" />";
     }
 
     public override XElement ToAst() => new(MarkdownRoot.Namespace + "link",
-                                             new XAttribute("destination", Source.Unescape()),
-                                             new XAttribute("title", Title.Unescape()),
-                                             Alternative.Select(inline => inline.ToAst()));
-
+                                            new XAttribute("destination", Source.Unescape()),
+                                            new XAttribute("title", Title.Unescape()),
+                                            Alternative.Select(inline => inline.ToAst()));
 }

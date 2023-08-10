@@ -11,7 +11,7 @@ internal class BlankLineParser : IMarkdownBlockParser
         if (!line.IsBlankLine()) return false;
 
         text = remaining;
-        father.Children.Add(new BlankLine() { Content = line.ToString() });
+        father.Children.Add(new BlankLine { Content = line.ToString() });
         return true;
     }
 }

@@ -15,11 +15,12 @@ public class MarkdownRoot : MarkdownBlock
 
     public override XElement ToAst() => new(Namespace + "document",
                                             Children.Where(child => child is not BlankLine)
-                                                     .Select(child => child.ToAst()));
+                                                    .Select(child => child.ToAst()));
 
-    public override string ToHtml(bool tight) => string.Join('\n', Children.Where(child => child is not BlankLine and not LinkReferenceDefinition)
-                                                                                    .Select(child => child.ToHtml(tight)))
-                                                               .Replace('\u0000', '\ufffd') + '\n';
+    internal override string ToHtml(bool tight)
+        => string.Join('\n', Children.Where(child => child is not BlankLine and not LinkReferenceDefinition)
+                                     .Select(child => child.ToHtml(tight)))
+                 .Replace('\u0000', '\ufffd') + '\n';
 
     public string ToHtml() => ToHtml(false);
 }

@@ -17,7 +17,7 @@ internal class HardLineBreakParser : IMarkdownLeafInlineParser
 
         if (!text[spaceCount].IsLineEnding()) return 0;
         
-        _ = TextUtils.ReadLine(text[spaceCount..], out var remaining, out _, out _);
+        TextUtils.ReadLine(text[spaceCount..], out var remaining, out _, out _);
         if (remaining.IsEmpty) return 0;
 
         var rightSpaceCount = remaining.CountLeadingCharacter(ch => ch.IsSpace() || ch.IsTab());

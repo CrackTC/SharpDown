@@ -59,11 +59,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
         content = string.Empty;
 
         type = GetBlockType(text);
-
-        if (type == HtmlBlockType.None)
-        {
-            return text;
-        }
+        if (type == HtmlBlockType.None) return text;
 
         var remaining = text;
         var builder = new StringBuilder();
@@ -84,26 +80,19 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
                 _ => throw new InvalidOperationException("Unexpected HtmlBlockType")
             };
 
-            if (assert || remaining.IsEmpty)
-            {
-                content = builder.ToString();
-                return remaining;
-            }
+            if (!assert && !remaining.IsEmpty) continue;
+            
+            content = builder.ToString();
+            return remaining;
         }
     }
 
     public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParsers)
     {
         var remaining = Skip(text, out var content, out var type);
-        if (remaining == text)
-        {
-            return false;
-        }
+        if (remaining == text) return false;
 
-        if (type == HtmlBlockType.Any && father.LastChild is Paragraph)
-        {
-            return false;
-        }
+        if (type == HtmlBlockType.Any && father.LastChild is Paragraph) return false;
 
         text = remaining;
         father.Children.Add(new HtmlBlock(content));

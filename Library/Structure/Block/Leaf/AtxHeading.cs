@@ -14,13 +14,13 @@ internal class AtxHeading : LeafBlock
         Content = content;
     }
 
-    //public override XElement? ToHtml() => new("h" + HeadingLevel, Children.Select(child => child.ToHtml()));
-    public override string ToHtml(bool tight)
-    {
-        return $"<h{HeadingLevel}>{string.Concat(Children.Select(child => child.ToHtml(tight)))}</h{HeadingLevel}>";
-    }
+    internal override string ToHtml(bool tight)
+        => $"<h{HeadingLevel}>{string.Concat(Children.Select(child => child.ToHtml(tight)))}</h{HeadingLevel}>";
 
-    public override XElement ToAst() => new(MarkdownRoot.Namespace + "heading", new XAttribute("level", HeadingLevel), Children.Select(child => child.ToAst()));
+    public override XElement ToAst()
+        => new(MarkdownRoot.Namespace + "heading",
+               new XAttribute("level", HeadingLevel),
+               Children.Select(child => child.ToAst()));
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
                                      IEnumerable<LinkReferenceDefinition> definitions)

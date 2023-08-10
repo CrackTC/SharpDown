@@ -16,7 +16,6 @@ internal class LinkReferenceDefinitionParser : IMarkdownBlockParser
         var columnNumber = tmp.ReadColumnNumber();
         var (count, index, _) = tmp.CountLeadingSpace(columnNumber, 4);
         if (count is 4) return text;
-
         tmp = tmp[index..];
 
         if (!tmp.TryReadLinkLabel(out label) || !tmp.StartsWith(":")) return text;
@@ -27,15 +26,9 @@ internal class LinkReferenceDefinitionParser : IMarkdownBlockParser
         ReadOnlySpan<char> remaining;
         var tmp2 = tmp;
 
-        if (tmp.TryRemoveTagInnerSpaces() && tmp != tmp2 && tmp.TryReadLinkTitle(out title) && tmp.IsBlankLine())
-        {
-            TextUtils.ReadLine(tmp, out remaining, out _, out _);
-            return remaining;
-        }
-        else
-        {
-            if (!TextUtils.ReadLine(tmp2, out remaining, out _, out _).IsBlankLine()) return text;
-        }
+        if (!tmp.TryRemoveTagInnerSpaces() || tmp == tmp2 || !tmp.TryReadLinkTitle(out title) || !tmp.IsBlankLine())
+            return !TextUtils.ReadLine(tmp2, out remaining, out _, out _).IsBlankLine() ? text : remaining;
+        TextUtils.ReadLine(tmp, out remaining, out _, out _);
         return remaining;
     }
 

@@ -5,13 +5,10 @@ using CrackTC.SharpDown.Parsing.Inline.Leaf;
 using CrackTC.SharpDown.Parsing.Inline.Nested;
 using CrackTC.SharpDown.Structure;
 using CrackTC.SharpDown.Structure.Block;
-using CrackTC.SharpDown.Structure.Block.Container;
 using CrackTC.SharpDown.Structure.Block.Leaf;
 using CrackTC.SharpDown.Structure.Inline;
 using CrackTC.SharpDown.Structure.Inline.Leaf;
 using CrackTC.SharpDown.Structure.Inline.Nested;
-using AutolinkParser = CrackTC.SharpDown.Parsing.Inline.Leaf.AutolinkParser;
-using HtmlBlockParser = CrackTC.SharpDown.Parsing.Block.Leaf.HtmlBlockParser;
 
 namespace CrackTC.SharpDown.Parsing;
 
@@ -23,12 +20,7 @@ public static class MarkdownParser
                                   IEnumerable<IMarkdownBlockParser> blockParsers)
     {
         foreach (var blockParser in blockParsers)
-        {
-            if (blockParser.TryReadAndParse(ref text, father, blockParsers))
-            {
-                return true;
-            }
-        }
+            if (blockParser.TryReadAndParse(ref text, father, blockParsers)) return true;
 
         return false;
     }
@@ -58,85 +50,14 @@ public static class MarkdownParser
         }
     }
 
-    private static IEnumerable<LinkReferenceDefinition> GetLinkReferenceDefinitions(MarkdownBlock root)
-    {
-        return root switch
-        {
-            LinkReferenceDefinition definition => Enumerable.Repeat(definition, 1),
-            ContainerBlock container => container.Children.SelectMany(child => GetLinkReferenceDefinitions((MarkdownBlock)child)),
-            MarkdownRoot rt => rt.Children.SelectMany(child => GetLinkReferenceDefinitions((MarkdownBlock)child)),
-            _ => Enumerable.Empty<LinkReferenceDefinition>(),
-        };
-    }
-
-    private static void CombineListItems(MarkdownBlock root)
-    {
-        var children = root.Children;
-        foreach (var child in children) if (child is ContainerBlock block) CombineListItems(block);
-
-        var newChildren = new List<MarkdownNode>();
-
-        List list = null!;
-        var listAssigned = false;
-        var meetBlankLine = false;
-        var markedAsLoose = false;
-        foreach (var child in children)
-        {
-            if (child is ListItem listItem)
-            {
-                if (!listAssigned) list = new List() { Sign = listItem.Sign, Number = listItem.Number, IsOrdered = listItem.IsOrdered };
-                else if (!ListItem.IsSameType((ListItem)list.Children[0], listItem))
-                {
-                    list.IsLoose = markedAsLoose || ListParser.IsListLoose(list);
-                    newChildren.Add(list);
-
-                    list = new List() { Sign = listItem.Sign, Number = listItem.Number, IsOrdered = listItem.IsOrdered };
-                }
-                else if (meetBlankLine)
-                {
-                    markedAsLoose = true;
-                }
-
-                listAssigned = true;
-                list.Children.Add(listItem);
-            }
-            else if (child is not BlankLine)
-            {
-                if (listAssigned)
-                {
-                    listAssigned = false;
-                    list.IsLoose = markedAsLoose || ListParser.IsListLoose(list);
-                    markedAsLoose = false;
-                    newChildren.Add(list);
-                }
-                meetBlankLine = false;
-                newChildren.Add(child);
-            }
-            else
-            {
-                if (listAssigned)
-                    meetBlankLine = true;
-                newChildren.Add(new BlankLine());
-            }
-        }
-
-        if (listAssigned)
-        {
-            list.IsLoose = markedAsLoose || ListParser.IsListLoose(list);
-            newChildren.Add(list);
-        }
-
-        root.Children = newChildren;
-    }
-
     private static MarkdownRoot Parse(ReadOnlySpan<char> text,
                                      IEnumerable<IMarkdownBlockParser> blockParsers,
                                      IEnumerable<IMarkdownLeafInlineParser> leafInlineParsers)
     {
         var root = new MarkdownRoot();
         ParseBlocks(text, root, blockParsers);
-        CombineListItems(root);
-        var definitions = GetLinkReferenceDefinitions(root);
+        Utils.CombineListItems(root);
+        var definitions = Utils.GetLinkReferenceDefinitions(root);
         root.ParseInline(leafInlineParsers, definitions);
         return root;
     }
@@ -168,7 +89,7 @@ public static class MarkdownParser
 
         return Parse(text, blockParsers, leafInlineParsers);
     }
-
+    
     private static void ProcessStar(ReadOnlySpan<char> text,
                                    ref int i,
                                    ref int textBegin,
@@ -179,14 +100,8 @@ public static class MarkdownParser
         int j;
         for (j = i + 1; j < text.Length; j++)
         {
-            if (text[j] is '*')
-            {
-                starCount++;
-            }
-            else
-            {
-                break;
-            }
+            if (text[j] is not '*') break;
+            starCount++;
         }
 
         var followedByWhitespace = j == text.Length || text[j].IsUnicodeWhiteSpace() || text[j].IsLineEnding();
@@ -205,11 +120,8 @@ public static class MarkdownParser
             i = j - 1;
             return;
         }
-        
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textNodes.AddLast((i, new Text(text[i..j].ToString())));
         textBegin = j;
@@ -236,14 +148,9 @@ public static class MarkdownParser
         int j;
         for (j = i + 1; j < text.Length; j++)
         {
-            if (text[j] is '_')
-            {
-                underscoreCount++;
-            }
-            else
-            {
-                break;
-            }
+            if (text[j] is not '_') break;
+
+            underscoreCount++;
         }
 
         var followedByWhitespace = j == text.Length || text[j].IsUnicodeWhiteSpace() || text[j].IsLineEnding();
@@ -263,10 +170,7 @@ public static class MarkdownParser
             return;
         }
         
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textNodes.AddLast((i, new Text(text[i..j].ToString())));
         textBegin = j;
@@ -296,11 +200,8 @@ public static class MarkdownParser
                                        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                        LinkedList<DelimiterNode> delimiterStack)
     {
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
-
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
+        
         textNodes.AddLast((i, new Text("[")));
         textBegin = i + 1;
 
@@ -319,34 +220,26 @@ public static class MarkdownParser
                                          LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                          LinkedList<DelimiterNode> delimiterStack)
     {
-        if (i < text.Length - 1 && text[i + 1] is '[')
+        if (i >= text.Length - 1 || text[i + 1] is not '[') return;
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
+        
+        textNodes.AddLast((i, new Text("![")));
+        textBegin = i + 2;
+        i++;
+
+        var node = new DelimiterNode
         {
-            if (textBegin != i)
-            {
-                textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-            }
-
-            textNodes.AddLast((i, new Text("![")));
-            textBegin = i + 2;
-            i++;
-
-            var node = new DelimiterNode
-            {
-                Number = 1,
-                TextNode = textNodes.Last!,
-                Type = DelimiterType.Image | DelimiterType.Active
-            };
-            delimiterStack.AddLast(node);
-        }
+            Number = 1,
+            TextNode = textNodes.Last!,
+            Type = DelimiterType.Image | DelimiterType.Active
+        };
+        delimiterStack.AddLast(node);
     }
 
     private static Dictionary<string, LinkReferenceDefinition> GetReferenceDictionary(IEnumerable<LinkReferenceDefinition> definitions)
     {
         var result = new Dictionary<string, LinkReferenceDefinition>(StringComparer.InvariantCultureIgnoreCase);
-        foreach (var definition in definitions.Reverse())
-        {
-            result[definition.Label.NormalizeLabel()] = definition;
-        }
+        foreach (var definition in definitions.Reverse()) result[definition.Label.NormalizeLabel()] = definition;
         return result;
     }
 
@@ -359,52 +252,15 @@ public static class MarkdownParser
         foreach (var parser in parsers)
         {
             var length = parser.TryReadAndParse(text[i..], out var inline);
-            if (length is not 0)
-            {
-                if (textBegin != i)
-                {
-                    textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-                }
+            if (length is 0) continue;
+            Utils.AppendTextRange(text, textBegin, i, textNodes);
 
-                textNodes.AddLast((i, inline!));
-                textBegin = i + length;
-                i = textBegin - 1;
-                return true;
-            }
+            textNodes.AddLast((i, inline!));
+            textBegin = i + length;
+            i = textBegin - 1;
+            return true;
         }
         return false;
-    }
-
-    private static IEnumerable<T> ElementsAfter<T>(LinkedListNode<T> node)
-    {
-        while (node.Next is not null)
-        {
-            node = node.Next;
-            yield return node.Value;
-        }
-    }
-
-    private static void RemoveToEnd<T>(LinkedList<T> list, LinkedListNode<T>? node)
-    {
-        while (node is not null)
-        {
-            var tmp = node;
-            node = node.Next;
-            list.Remove(tmp);
-        }
-    }
-
-    private static void DeactivateLinks(LinkedListNode<DelimiterNode> node)
-    {
-        while (node.Previous is not null)
-        {
-            if (node.Previous.Value.Type.HasFlag(DelimiterType.Link))
-            {
-                node.Previous.ValueRef.Type &= ~DelimiterType.Active;
-            }
-
-            node = node.Previous;
-        }
     }
 
     private static bool ProcessInlineLink(ReadOnlySpan<char> text,
@@ -416,11 +272,8 @@ public static class MarkdownParser
     {
         var remaining = text[(i + 2)..];
 
-        if (remaining.TryRemoveTagInnerSpaces() is false
-            || remaining.TryReadLinkDestination(out var destination) is false)
-        {
-            return false;
-        }
+        if (!remaining.TryRemoveTagInnerSpaces()
+            || !remaining.TryReadLinkDestination(out var destination)) return false;
 
 
         var tmp = remaining;
@@ -428,22 +281,15 @@ public static class MarkdownParser
 
         string? title = null;
         if (remaining == tmp
-            || remaining.TryReadLinkTitle(out title) is false
-            || remaining.TryRemoveTagInnerSpaces() is false
-            || remaining.StartsWith(")") is false)
+            || !remaining.TryReadLinkTitle(out title)
+            || !remaining.TryRemoveTagInnerSpaces()
+            || !remaining.StartsWith(")"))
         {
             remaining = tmp;
-            if (remaining.TryRemoveTagInnerSpaces() is false
-                || remaining.StartsWith(")") is false)
-            {
-                return false;
-            }
+            if (!remaining.TryRemoveTagInnerSpaces() || !remaining.StartsWith(")")) return false;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         remaining = remaining[1..];
         textBegin = text.Length - remaining.Length;
@@ -451,13 +297,13 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                             destination,
                             title ?? string.Empty);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactivateLinks(openDelimiterNode);
+        Utils.DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
         return true;
     }
@@ -497,10 +343,7 @@ public static class MarkdownParser
             }
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         remaining = remaining[1..];
         textBegin = text.Length - remaining.Length;
@@ -508,11 +351,11 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                             destination,
                             title ?? string.Empty);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
         delimiterStack.Remove(openDelimiterNode);
     }
@@ -523,7 +366,7 @@ public static class MarkdownParser
                                                  LinkedListNode<DelimiterNode> openDelimiterNode,
                                                  LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                                  LinkedList<DelimiterNode> delimiterStack,
-                                                 Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var remaining = text[(i + 1)..];
 
@@ -541,23 +384,20 @@ public static class MarkdownParser
             return;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textBegin = text.Length - remaining.Length;
         i = textBegin - 1;
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                             definition.Destination,
                             definition.Title);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactivateLinks(openDelimiterNode);
+        Utils.DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
     }
 
@@ -567,7 +407,7 @@ public static class MarkdownParser
                                                  LinkedListNode<DelimiterNode> openDelimiterNode,
                                                  LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                                  LinkedList<DelimiterNode> delimiterStack,
-                                                 Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var remaining = text[(i + 1)..];
 
@@ -585,21 +425,18 @@ public static class MarkdownParser
             return;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textBegin = text.Length - remaining.Length;
         i = textBegin - 1;
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                              definition.Destination,
                              definition.Title);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
         delimiterStack.Remove(openDelimiterNode);
     }
@@ -610,7 +447,7 @@ public static class MarkdownParser
                                                  LinkedListNode<DelimiterNode> openDelimiterNode,
                                                  LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                                  LinkedList<DelimiterNode> delimiterStack,
-                                                 Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
@@ -621,23 +458,20 @@ public static class MarkdownParser
             return;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textBegin = i + 3;
         i = textBegin - 1;
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                             definition.Destination,
                             definition.Title);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactivateLinks(openDelimiterNode);
+        Utils.DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
     }
 
@@ -647,7 +481,7 @@ public static class MarkdownParser
                                                  LinkedListNode<DelimiterNode> openDelimiterNode,
                                                  LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                                  LinkedList<DelimiterNode> delimiterStack,
-                                                 Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
@@ -658,21 +492,18 @@ public static class MarkdownParser
             return;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textBegin = i + 3;
         i = textBegin - 1;
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                              definition.Destination,
                              definition.Title);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
         delimiterStack.Remove(openDelimiterNode);
     }
@@ -684,7 +515,7 @@ public static class MarkdownParser
                                                      LinkedListNode<DelimiterNode> openDelimiterNode,
                                                      LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                                      LinkedList<DelimiterNode> delimiterStack,
-                                                     Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                                     IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
@@ -695,23 +526,20 @@ public static class MarkdownParser
             return;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textBegin = i + 1;
         i = textBegin - 1;
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                             definition.Destination,
                             definition.Title);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
-        DeactivateLinks(openDelimiterNode);
+        Utils.DeactivateLinks(openDelimiterNode);
         delimiterStack.Remove(openDelimiterNode);
     }
 
@@ -721,7 +549,7 @@ public static class MarkdownParser
                                                       LinkedListNode<DelimiterNode> openDelimiterNode,
                                                       LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                                       LinkedList<DelimiterNode> delimiterStack,
-                                                      Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                                      IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
@@ -732,20 +560,17 @@ public static class MarkdownParser
             return;
         }
 
-        if (textBegin != i)
-        {
-            textNodes.AddLast((textBegin, new Text(text[textBegin..i].ToString())));
-        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textBegin = i + 1;
         i = textBegin - 1;
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
                              definition.Destination, definition.Title);
 
-        RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
+        Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
         delimiterStack.Remove(openDelimiterNode);
     }
@@ -755,7 +580,7 @@ public static class MarkdownParser
                                    ref int textBegin,
                                    LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
                                    LinkedList<DelimiterNode> delimiterStack,
-                                   Dictionary<string, LinkReferenceDefinition> definitionDictionary)
+                                   IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var currentNode = delimiterStack.Last;
         while (currentNode is not null)
@@ -779,20 +604,17 @@ public static class MarkdownParser
                 if (text[(i + 1)..].StartsWith("[")) // collapsed or full reference link
                 {
                     if (text[(i + 2)..].StartsWith("]"))
-                    {
                         ProcessCollapsedReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
-                    }
                     else
-                    {
                         ProcessFullReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
-                    }
                     return;
                 }
                 // shortcut reference link
                 ProcessShortcutReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
                 return;
             }
-            else if (delimiterInfo.Type.HasFlag(DelimiterType.Image))
+
+            if (delimiterInfo.Type.HasFlag(DelimiterType.Image))
             {
                 if (delimiterInfo.Type.HasFlag(DelimiterType.Active) is false)
                 {
@@ -809,22 +631,16 @@ public static class MarkdownParser
                 if (text[(i + 1)..].StartsWith("["))
                 {
                     if (text[(i + 2)..].StartsWith("]"))
-                    {
                         ProcessCollapsedReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
-                    }
                     else
-                    {
                         ProcessFullReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
-                    }
                     return;
                 }
                 ProcessShortcutReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
                 return;
             }
-            else
-            {
-                currentNode = currentNode.Previous;
-            }
+
+            currentNode = currentNode.Previous;
         }
     }
 
@@ -873,8 +689,7 @@ public static class MarkdownParser
             }
         }
 
-        if (textBegin != text.Length)
-            textNodes.AddLast((textBegin, new Text(text[textBegin..].ToString())));
+        Utils.AppendTextRange(text, textBegin, text.Length, textNodes);
 
         ProcessEmphasis(textNodes, delimiterStack, null);
 
@@ -950,10 +765,7 @@ public static class MarkdownParser
                     textNodes.AddAfter(node, (0, emphasis));
                 }
 
-                for (var node = opener; node.Next != currentPosition;)
-                {
-                    delimiterStack.Remove(node.Next!);
-                }
+                while (opener.Next != currentPosition) delimiterStack.Remove(opener.Next!);
 
                 opener.ValueRef.Number -= isStrong ? 2 : 1;
                 currentPosition.ValueRef.Number -= isStrong ? 2 : 1;
@@ -983,21 +795,17 @@ public static class MarkdownParser
                 break;
             }
 
-            if (opener == stackBottom || opener == openersBottom) // not found
-            {
-                if (!multipleOfThree) openersBottom = currentPosition!.Previous;
-                multipleOfThree = false;
+            if (opener != stackBottom && opener != openersBottom) continue; // not found
+            
+            if (!multipleOfThree) openersBottom = currentPosition!.Previous;
+            multipleOfThree = false;
 
-                var tmp = currentPosition!;
-                currentPosition = currentPosition!.Next;
+            var tmp2 = currentPosition!;
+            currentPosition = currentPosition!.Next;
 
-                if (tmp.Value.Type.HasFlag(DelimiterType.Open) is false)
-                {
-                    delimiterStack.Remove(tmp);
-                }
-            }
+            if (tmp2.Value.Type.HasFlag(DelimiterType.Open) is false) delimiterStack.Remove(tmp2);
         }
 
-        RemoveToEnd(delimiterStack, stackBottom == null ? delimiterStack.First : stackBottom.Next);
+        Utils.RemoveToEnd(delimiterStack, stackBottom == null ? delimiterStack.First : stackBottom.Next);
     }
 }

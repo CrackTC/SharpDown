@@ -7,13 +7,9 @@ internal class CodeSpan : MarkdownInline
 {
     private string Content { get; }
 
-    public CodeSpan(string content)
-    {
-        Content = content;
-    }
+    public CodeSpan(string content) => Content = content;
 
-    //public override XElement? ToHtml() => new("code", Content);
-    public override string ToHtml(bool tight) => $"<code>{Content.HtmlEscape()}</code>";
+    internal override string ToHtml(bool tight) => $"<code>{Content.HtmlEscape()}</code>";
 
     public override XElement ToAst() => new(MarkdownRoot.Namespace + "code", Content);
 }

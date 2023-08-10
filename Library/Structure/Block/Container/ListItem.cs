@@ -19,14 +19,7 @@ internal class ListItem : ContainerBlock
 
     public static bool IsSameType(ListItem a, ListItem b) => a.IsOrdered == b.IsOrdered && a.Sign == b.Sign;
 
-    //public XElement ToHtmlTight()
-    //{
-    //    var tightContent = ToHtml()!.Elements().Select<XElement, object>(child => child.Name.LocalName is "p" ? child.Nodes() : child);
-    //    return new("li", tightContent);
-    //}
-
-    //public override XElement? ToHtml() => new("li", _children.Select(_children => _children.ToHtml()));
-    public override string ToHtml(bool tight)
+    internal override string ToHtml(bool tight)
     {
         var content = string.Join('\n', Children.Where(child => child is not BlankLine and not LinkReferenceDefinition)
                                                 .Select(child => child.ToHtml(tight)));

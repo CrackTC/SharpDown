@@ -100,20 +100,19 @@ internal class BlockQuoteParser : IMarkdownBlockParser
                     father.Children.Add(tmpResult);
                     return text;
                 }
-                else if (MarkdownParser.ParseBlock(ref text,
-                                                   tmpResult,
-                                                   blockParsers.Where(parser => parser is not IndentedCodeBlockParser))) // not continuation
+
+                if (MarkdownParser.ParseBlock(ref text,
+                        tmpResult,
+                        blockParsers.Where(parser => parser is not IndentedCodeBlockParser))) // not continuation
                 {
                     father.Children.Add(tmpResult);
                     father.Children.Add(tmpResult.LastChild);
                     tmpResult.Children.RemoveAt(tmpResult.Children.Count - 1);
                     return text;
                 }
-                else
-                {
-                    contentBuilder.Append(line.MarkAsParagraph());
-                    contentBuilder.Append('\n');
-                }
+
+                contentBuilder.Append(line.MarkAsParagraph());
+                contentBuilder.Append('\n');
             }
         }
     }
@@ -123,11 +122,8 @@ internal class BlockQuoteParser : IMarkdownBlockParser
                                 IEnumerable<IMarkdownBlockParser> blockParsers)
     {
         var remaining = Skip(text, father, blockParsers);
-        if (remaining == text)
-        {
-            return false;
-        }
-
+        if (remaining == text) return false; 
+        
         text = remaining;
         return true;
     }

@@ -13,12 +13,10 @@ internal class BlockQuote : ContainerBlock
     public override XElement ToAst() => new(MarkdownRoot.Namespace + "block_quote",
                                             Children.Select(child => child.ToAst()));
 
-    //public override XElement? ToHtml() => new("blockquote",
-    //                                         _children.Select(child => child.ToHtml()));
-
-    public override string ToHtml(bool tight)
+    internal override string ToHtml(bool tight)
     {
-        var content = string.Join('\n', Children.Where(child => child is not BlankLine and not LinkReferenceDefinition).Select(child => child.ToHtml(false)));
+        var content = string.Join('\n', Children.Where(child => child is not BlankLine and not LinkReferenceDefinition)
+                                                .Select(child => child.ToHtml(false)));
         return $"<blockquote>\n{(string.IsNullOrEmpty(content) ? string.Empty : content + '\n')}</blockquote>";
     }
 }

@@ -16,23 +16,20 @@ namespace CrackTC.SharpDown.Structure.Inline.Nested
             Title = title ?? string.Empty;
         }
 
-        //public override XElement? ToHtml() => new("a",
-        //                                          new XAttribute("href", Destination.Unescape()),
-        //                                          string.IsNullOrEmpty(Title) ? null : new XAttribute("title", Title.Unescape()),
-        //                                          Text.Select(inline => inline.ToHtml()));
-        public override string ToHtml(bool tight)
+        internal override string ToHtml(bool tight)
         {
             var content = string.Concat(Text.Select(inline => inline.ToHtml(tight)));
+            var destination = Destination.AsSpan().HtmlUnescape().Unescape().HtmlEscape();
             if (string.IsNullOrEmpty(Title))
-            {
-                return $"<a href=\"{Destination.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\">{content}</a>";
-            }
-            return $"<a href=\"{Destination.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\" title=\"{Title.AsSpan().HtmlUnescape().Unescape().HtmlEscape()}\">{content}</a>";
+                return $"<a href=\"{destination}\">{content}</a>";
+            
+            var title = Title.AsSpan().HtmlUnescape().Unescape().HtmlEscape();
+            return $"<a href=\"{destination}\" title=\"{title}\">{content}</a>";
         }
 
         public override XElement ToAst() => new(MarkdownRoot.Namespace + "link",
-                                                 new XAttribute("destination", Destination.Unescape()),
-                                                 new XAttribute("title", Title.Unescape()),
-                                                 Text.Select(inline => inline.ToAst()));
+                                                new XAttribute("destination", Destination.Unescape()),
+                                                new XAttribute("title", Title.Unescape()),
+                                                Text.Select(inline => inline.ToAst()));
     }
 }

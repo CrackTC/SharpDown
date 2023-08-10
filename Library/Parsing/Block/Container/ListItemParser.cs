@@ -10,11 +10,7 @@ internal class ListItemParser : IMarkdownBlockParser
 {
     private static int CountBulletListMarker(ReadOnlySpan<char> text)
     {
-        if (text.IsEmpty)
-        {
-            return 0;
-        }
-
+        if (text.IsEmpty) return 0;
         return "-+*".Contains(text[0]) ? 1 : 0;
     }
 
@@ -101,17 +97,21 @@ internal class ListItemParser : IMarkdownBlockParser
         else
         {
             (var separatorCount, index, var tabRemainingSpaces) = line.CountLeadingSpace(columnNumber, 5);
-            if (separatorCount is 5) // rule 2
+            switch (separatorCount)
             {
-                contentBuilder.Append((columnNumber + 1).GenerateHeading())
-                              .Append(TextUtils.Space, tabRemainingSpaces + 4);
-                indentation++;
-            }
-            else if (separatorCount is 0) return text;
-            else // rule 1
-            {
-                contentBuilder.Append((columnNumber + separatorCount).GenerateHeading());
-                indentation += separatorCount;
+                // rule 2
+                case 5:
+                    contentBuilder.Append((columnNumber + 1).GenerateHeading())
+                                  .Append(TextUtils.Space, tabRemainingSpaces + 4);
+                    indentation++;
+                    break;
+                case 0:
+                    return text;
+                // rule 1
+                default:
+                    contentBuilder.Append((columnNumber + separatorCount).GenerateHeading());
+                    indentation += separatorCount;
+                    break;
             }
         }
 
@@ -156,43 +156,39 @@ internal class ListItemParser : IMarkdownBlockParser
 
             var tmpResult = new BlockQuote();
 
-            if (!TryAppendListItemContent(contentBuilder, line, columnNumber, indentation))
+            if (TryAppendListItemContent(contentBuilder, line, columnNumber, indentation)) continue;
+                MarkdownParser.ParseBlocks(contentBuilder.ToString(), tmpResult, blockParsers);
+
+            if (tmpResult.LastChild is not Paragraph
+                && !(tmpResult.LastChild is ContainerBlock container && Utils.IsNestedLastParagraph(container)))
             {
-                var content = contentBuilder.ToString();
-                MarkdownParser.ParseBlocks(content, tmpResult, blockParsers);
-
-                if (tmpResult.LastChild is not Paragraph && !(tmpResult.LastChild is ContainerBlock container && Utils.IsNestedLastParagraph(container)))
+                result.Children.AddRange(tmpResult.Children);
+                father.Children.Add(result);
+                while (result.LastChild is BlankLine && result.Children.Count != 1)
                 {
-                    result.Children.AddRange(tmpResult.Children);
-                    father.Children.Add(result);
-                    while (result.LastChild is BlankLine && result.Children.Count != 1)
-                    {
-                        father.Children.Add(result.LastChild);
-                        result.Children.RemoveAt(result.Children.Count - 1);
-                    }
-                    return text;
+                    father.Children.Add(result.LastChild);
+                    result.Children.RemoveAt(result.Children.Count - 1);
                 }
-
-                var tmpResult2 = new BlockQuote();
-
-                if (MarkdownParser.ParseBlock(ref text, tmpResult2, blockParsers.Where(parser => parser is not IndentedCodeBlockParser)))
-                {
-                    result.Children.AddRange(tmpResult.Children);
-                    father.Children.Add(result);
-                    while (result.LastChild is BlankLine && result.Children.Count != 1)
-                    {
-                        father.Children.Add(result.LastChild);
-                        result.Children.RemoveAt(result.Children.Count - 1);
-                    }
-                    father.Children.AddRange(tmpResult2.Children);
-                    return text;
-                }
-                else
-                {
-                    contentBuilder.Append(line.MarkAsParagraph());
-                    contentBuilder.Append('\n');
-                }
+                return text;
             }
+
+            var tmpResult2 = new BlockQuote();
+
+            if (MarkdownParser.ParseBlock(ref text, tmpResult2, blockParsers.Where(parser => parser is not IndentedCodeBlockParser)))
+            {
+                result.Children.AddRange(tmpResult.Children);
+                father.Children.Add(result);
+                while (result.LastChild is BlankLine && result.Children.Count != 1)
+                {
+                    father.Children.Add(result.LastChild);
+                    result.Children.RemoveAt(result.Children.Count - 1);
+                }
+                father.Children.AddRange(tmpResult2.Children);
+                return text;
+            }
+
+            contentBuilder.Append(line.MarkAsParagraph());
+            contentBuilder.Append('\n');
         }
     }
 

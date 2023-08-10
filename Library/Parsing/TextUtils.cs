@@ -52,7 +52,7 @@ internal static class TextUtils
         character.IsCarriageReturn();
 
     private static bool IsAsciiControl(this char character) =>
-        character is '\u007f' or >= '\u0000' and <= '\u001f';
+        character is '\u007f' or <= '\u001f';
     public static bool IsAsciiPunctuation(this char character) =>
         character is >= '\u0021' and <= '\u002f'
                   or >= '\u003a' and <= '\u0040'
