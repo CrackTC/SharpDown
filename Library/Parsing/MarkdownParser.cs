@@ -83,6 +83,8 @@ public static class MarkdownParser
             new CodeSpanParser(),
             new AutolinkParser(),
             new HtmlTagParser(),
+            new WikiLinkParser(),
+            new EmbeddedFileParser(),
             new HardLineBreakParser(),
             new SoftLineBreakParser()
         };
