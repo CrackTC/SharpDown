@@ -783,12 +783,15 @@ internal static class TextUtils
 
     static TextUtils()
     {
-        EntityDictionary = new();
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CrackTC.SharpDown.Parsing.entities.json")!;
-        var node = JsonSerializer.Deserialize<JsonNode>(stream)!;
-        foreach (var item in node.AsObject())
+        EntityDictionary = new Dictionary<string, string>();
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CrackTC.SharpDown.Parsing.entities.bin")!;
+        using var reader = new BinaryReader(stream);
+        var count = reader.ReadInt32();
+        for (var i = 0; i < count; i++)
         {
-            EntityDictionary[item.Key] = (string)item.Value!["characters"]!;
+            var key = reader.ReadString();
+            var value = reader.ReadString();
+            EntityDictionary[key] = value;
         }
     }
 }
