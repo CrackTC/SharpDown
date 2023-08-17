@@ -1,3 +1,3 @@
 ﻿namespace CrackTC.SharpDown.Structure.Inline;
 
-internal abstract class MarkdownInline : MarkdownNode { }
+public abstract class MarkdownInline : MarkdownNode { }

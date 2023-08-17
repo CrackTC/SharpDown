@@ -612,7 +612,7 @@ internal static class TextUtils
         return builder.ToString();
     }
 
-    private static bool TryReadUtilUnescaped(this ref ReadOnlySpan<char> text, char ending, out string content)
+    internal static bool TryReadUtilUnescaped(this ref ReadOnlySpan<char> text, char ending, out string content)
     {
         var builder = new StringBuilder();
         var tmp = text;
