@@ -22,7 +22,7 @@ internal class EmbeddedFile : MarkdownInline
         return $"<div class=\"embedded-file\" data-src=\"{source}\" data-attr=\"{attribute}\"></div>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         if (!string.IsNullOrEmpty(Attribute))
             return new XElement(MarkdownRoot.Namespace + "file",

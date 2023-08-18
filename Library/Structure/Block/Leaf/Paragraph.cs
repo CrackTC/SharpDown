@@ -19,7 +19,7 @@ internal class Paragraph : LeafBlock
         return tight ? content : $"<p>{content}</p>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "paragraph", Children.Select(child => child.ToAst()));
     }

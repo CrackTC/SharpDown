@@ -17,7 +17,7 @@ internal class List : ContainerBlock
         Children.ForEach(child => ((MarkdownBlock)child).ParseInline(parsers, definitions));
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         var content = Children.Select(child => child.ToAst());
 

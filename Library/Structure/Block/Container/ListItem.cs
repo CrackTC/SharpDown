@@ -38,7 +38,7 @@ internal class ListItem : ContainerBlock
         return $"<li>{(beginLineEnding ? "\n" : "")}{content}{(endLineEnding ? "\n" : "")}</li>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "item", Children.Select(child => child.ToAst()));
     }

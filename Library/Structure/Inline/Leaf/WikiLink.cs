@@ -21,7 +21,7 @@ internal class WikiLink : MarkdownInline
         return $"<a class=\"wiki-link\" href=\"{destination}\">{display}</a>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "wiki-link",
             new XAttribute("display", Display),

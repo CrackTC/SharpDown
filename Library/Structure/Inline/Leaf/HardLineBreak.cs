@@ -4,7 +4,7 @@ namespace CrackTC.SharpDown.Structure.Inline.Leaf;
 
 internal class HardLineBreak : MarkdownInline
 {
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "linebreak");
     }

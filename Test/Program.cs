@@ -1,11 +1,12 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using CrackTC.SharpDown.Parsing;
 
 var testCases = File.ReadAllText("spec.json");
 var json = JsonSerializer.Deserialize<JsonNode>(testCases);
 var count = 0;
-var watch = System.Diagnostics.Stopwatch.StartNew();
+var watch = Stopwatch.StartNew();
 
 foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["example"]! >= 0))
 {

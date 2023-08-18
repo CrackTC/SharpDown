@@ -9,7 +9,7 @@ internal class ThematicBreak : LeafBlock
         return "<hr />";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "thematic_break");
     }

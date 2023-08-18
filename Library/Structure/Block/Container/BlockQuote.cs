@@ -12,7 +12,7 @@ internal class BlockQuote : ContainerBlock
         Children.ForEach(child => ((MarkdownBlock)child).ParseInline(parsers, definitions));
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "block_quote",
             Children.Select(child => child.ToAst()));

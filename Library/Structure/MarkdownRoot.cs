@@ -15,7 +15,7 @@ public class MarkdownRoot : MarkdownBlock
         Children.ForEach(child => ((MarkdownBlock)child).ParseInline(parsers, definitions));
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(Namespace + "document",
             Children.Where(child => child is not BlankLine)

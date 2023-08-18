@@ -152,4 +152,21 @@ internal static class Utils
 
         return false;
     }
+
+    internal static void Resize<T>(this List<T> list, int size, T element)
+    {
+        var count = list.Count;
+
+        if (size < count)
+        {
+            list.RemoveRange(size, count - size);
+        }
+        else if (size > count)
+        {
+            if (size > list.Capacity) // Optimization
+                list.Capacity = size;
+
+            list.AddRange(Enumerable.Repeat(element, size - count));
+        }
+    }
 }

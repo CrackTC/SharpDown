@@ -20,7 +20,7 @@ internal class AtxHeading : LeafBlock
         return $"<h{HeadingLevel}>{string.Concat(Children.Select(child => child.ToHtml(tight)))}</h{HeadingLevel}>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "heading",
             new XAttribute("level", HeadingLevel),

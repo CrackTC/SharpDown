@@ -17,7 +17,7 @@ internal class IndentedCodeBlock : LeafBlock
         return $"<pre><code>{Code.HtmlEscape()}</code></pre>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "code_block", Code);
     }

@@ -76,7 +76,9 @@ public static class MarkdownParser
             new HtmlBlockParser(),
             new IndentedCodeBlockParser(),
             new LinkReferenceDefinitionParser(),
-            new SetextHeadingParser()
+            new SetextHeadingParser(),
+            new TableParser(),
+            new MathBlockParser()
         };
 
         var leafInlineParsers = new IMarkdownLeafInlineParser[]
@@ -86,13 +88,40 @@ public static class MarkdownParser
             new HtmlTagParser(),
             new WikiLinkParser(),
             new EmbeddedFileParser(),
-            new MathParser(),
+            new MathSpanParser(),
             new HardLineBreakParser(),
             new SoftLineBreakParser()
         };
 
         return Parse(text, blockParsers, leafInlineParsers);
     }
+
+    private static void ProcessTilde(ReadOnlySpan<char> text,
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
+    {
+        int tildeCount = 1;
+        while (i + tildeCount < text.Length && text[i + tildeCount] == '~') tildeCount++;
+        if (tildeCount > 2)
+        {
+            i += tildeCount - 1;
+            return;
+        }
+        Utils.AppendTextRange(text, textBegin, i, textNodes);
+        textNodes.AddLast((i, new Text(tildeCount == 1 ? "~" : "~~")));
+        textBegin = i + tildeCount;
+        i = textBegin - 1;
+        var node = new DelimiterNode
+        {
+            Number = tildeCount,
+            TextNode = textNodes.Last!,
+            Type = DelimiterType.Tilde
+        };
+        delimiterStack.AddLast(node);
+    }
+
 
     private static void ProcessStar(ReadOnlySpan<char> text,
         ref int i,
@@ -299,7 +328,9 @@ public static class MarkdownParser
         textBegin = text.Length - remaining.Length;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Link(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -354,7 +385,9 @@ public static class MarkdownParser
         textBegin = text.Length - remaining.Length;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Image(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -395,7 +428,9 @@ public static class MarkdownParser
         textBegin = text.Length - remaining.Length;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Link(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -437,7 +472,9 @@ public static class MarkdownParser
         textBegin = text.Length - remaining.Length;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Image(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -471,7 +508,9 @@ public static class MarkdownParser
         textBegin = i + 3;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Link(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -506,7 +545,9 @@ public static class MarkdownParser
         textBegin = i + 3;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Image(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -541,7 +582,9 @@ public static class MarkdownParser
         textBegin = i + 1;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Link(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -576,7 +619,9 @@ public static class MarkdownParser
         textBegin = i + 1;
         i = textBegin - 1;
 
+        ProcessStrikethrough(textNodes, delimiterStack, openDelimiterNode);
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
+        Utils.RemoveToEnd(delimiterStack, openDelimiterNode.Next);
 
         var link = new Image(
             Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
@@ -690,6 +735,9 @@ public static class MarkdownParser
 
             switch (text[i])
             {
+                case '~':
+                    ProcessTilde(text, ref i, ref textBegin, textNodes, delimiterStack);
+                    continue;
                 case '*':
                     ProcessStar(text, ref i, ref textBegin, textNodes, delimiterStack);
                     continue;
@@ -710,7 +758,9 @@ public static class MarkdownParser
 
         Utils.AppendTextRange(text, textBegin, text.Length, textNodes);
 
+        ProcessStrikethrough(textNodes, delimiterStack, null);
         ProcessEmphasis(textNodes, delimiterStack, null);
+        Utils.RemoveToEnd(delimiterStack, delimiterStack.First);
 
         foreach (var node in textNodes) father.Children.Add(node.Inline);
     }
@@ -829,4 +879,54 @@ public static class MarkdownParser
 
         Utils.RemoveToEnd(delimiterStack, stackBottom == null ? delimiterStack.First : stackBottom.Next);
     }
+
+    private static void ProcessStrikethrough(LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        LinkedListNode<DelimiterNode>? stackBottom)
+    {
+        var opener = stackBottom == null ? delimiterStack.First : stackBottom.Next;
+
+        while (opener != null)
+        {
+            if (!opener.Value.Type.HasFlag(DelimiterType.Tilde))
+            {
+                opener = opener.Next;
+                continue;
+            }
+
+            var closer = opener.Next;
+
+            while (closer != null)
+            {
+                if (!closer.Value.Type.HasFlag(DelimiterType.Tilde) || closer.Value.Number != opener.Value.Number)
+                {
+                    closer = closer.Next;
+                    continue;
+                }
+
+                var strikethrough = new Strikethrough();
+
+                var node = opener.Value.TextNode;
+                while (node.Next != closer.Value.TextNode)
+                {
+                    strikethrough.Children.Add(node.Next!.Value.Inline);
+                    textNodes.Remove(node.Next!);
+                }
+
+                textNodes.AddAfter(node, (0, strikethrough));
+
+                while (opener.Next != closer) delimiterStack.Remove(opener.Next!);
+
+                textNodes.Remove(closer.Value.TextNode);
+                delimiterStack.Remove(closer);
+                break;
+            }
+
+            if (closer != null) textNodes.Remove(opener.Value.TextNode);
+            var tmp = opener;
+            opener = opener.Next;
+            delimiterStack.Remove(tmp);
+        }
+    }
+
 }

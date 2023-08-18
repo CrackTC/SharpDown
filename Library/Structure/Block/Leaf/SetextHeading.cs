@@ -21,7 +21,7 @@ internal class SetextHeading : LeafBlock
         return $"<h{HeadingLevel}>{content}</h{HeadingLevel}>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "heading",
             new XAttribute("level", HeadingLevel),

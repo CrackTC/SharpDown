@@ -16,7 +16,7 @@ internal class HtmlTag : MarkdownInline
         return Content;
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "html_inline", Content);
     }

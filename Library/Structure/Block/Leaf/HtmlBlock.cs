@@ -28,7 +28,7 @@ internal class HtmlBlock : LeafBlock
         return Content;
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "html_block", Content);
     }

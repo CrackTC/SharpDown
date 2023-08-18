@@ -11,7 +11,7 @@ internal class BlankLine : LeafBlock
         return string.Empty;
     }
 
-    public override XElement? ToAst()
+    internal override XElement? ToAst()
     {
         return null;
     }

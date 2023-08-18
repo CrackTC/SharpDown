@@ -3,9 +3,9 @@ using CrackTC.SharpDown.Parsing;
 
 namespace CrackTC.SharpDown.Structure.Inline.Leaf;
 
-internal class Math : MarkdownInline
+internal class MathSpan : MarkdownInline
 {
-    public Math(string content)
+    public MathSpan(string content)
     {
         Content = content;
     }
@@ -17,8 +17,8 @@ internal class Math : MarkdownInline
         return Content.HtmlEscape();
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
-        return new XElement(MarkdownRoot.Namespace + "math", Content);
+        return new XElement(MarkdownRoot.Namespace + "math_span", Content);
     }
 }

@@ -17,7 +17,7 @@ internal class Text : MarkdownInline
         return Content.AsSpan().HtmlUnescape().Unescape().HtmlEscape();
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "text", Content);
     }

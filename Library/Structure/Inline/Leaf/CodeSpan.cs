@@ -17,7 +17,7 @@ internal class CodeSpan : MarkdownInline
         return $"<code>{Content.HtmlEscape()}</code>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "code", Content);
     }

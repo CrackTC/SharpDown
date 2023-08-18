@@ -26,7 +26,7 @@ internal class Image : MarkdownInline
         return $"<img src=\"{src}\" alt=\"{alt}\" title=\"{title}\" />";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "link",
             new XAttribute("destination", Source.Unescape()),

@@ -27,7 +27,7 @@ internal class Link : MarkdownInline
         return $"<a href=\"{destination}\" title=\"{title}\">{content}</a>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         return new XElement(MarkdownRoot.Namespace + "link",
             new XAttribute("destination", Destination.Unescape()),

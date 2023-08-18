@@ -23,7 +23,7 @@ internal class FencedCodeBlock : LeafBlock
             : $"<pre><code class=\"language-{infoString}\">{code}</code></pre>";
     }
 
-    public override XElement ToAst()
+    internal override XElement ToAst()
     {
         if (string.IsNullOrEmpty(InfoString))
             return new XElement(MarkdownRoot.Namespace + "code_block", Code);

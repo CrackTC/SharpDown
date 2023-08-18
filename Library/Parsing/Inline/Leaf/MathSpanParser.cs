@@ -1,9 +1,9 @@
 using CrackTC.SharpDown.Structure.Inline;
-using Math = CrackTC.SharpDown.Structure.Inline.Leaf.Math;
+using CrackTC.SharpDown.Structure.Inline.Leaf;
 
 namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
-internal class MathParser : IMarkdownLeafInlineParser
+internal class MathSpanParser : IMarkdownLeafInlineParser
 {
     public int TryParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
     {
@@ -20,7 +20,7 @@ internal class MathParser : IMarkdownLeafInlineParser
         tmp = tmp[1..];
         if (!tmp.TryReadUtilUnescaped('$', out var content)) return 0;
         tmp = tmp[1..];
-        inline = new Math($"${content}$");
+        inline = new MathSpan($"${content}$");
         return text.Length - tmp.Length;
     }
 
@@ -34,7 +34,7 @@ internal class MathParser : IMarkdownLeafInlineParser
         if (!tmp.TryReadUtilUnescaped('$', out var content)) return 0;
         if (!tmp.StartsWith("$$")) return 0;
         tmp = tmp[2..];
-        inline = new Math($"$${content}$$");
+        inline = new MathSpan($"$${content}$$");
         return text.Length - tmp.Length;
     }
 }
