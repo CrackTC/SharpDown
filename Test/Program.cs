@@ -5,6 +5,7 @@ using CrackTC.SharpDown.Parsing;
 var testCases = File.ReadAllText("spec.json");
 var json = JsonSerializer.Deserialize<JsonNode>(testCases);
 var count = 0;
+var watch = System.Diagnostics.Stopwatch.StartNew();
 
 foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["example"]! >= 0))
 {
@@ -34,4 +35,7 @@ foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["examp
     }
 }
 
+watch.Stop();
+var elapsedMs = watch.ElapsedMilliseconds;
+Console.WriteLine(elapsedMs);
 Console.WriteLine(count);
