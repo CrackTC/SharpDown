@@ -1,9 +1,10 @@
-﻿using CrackTC.SharpDown.Parsing;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
+using CrackTC.SharpDown.Parsing;
 
 var testCases = File.ReadAllText("spec.json");
 var json = JsonSerializer.Deserialize<JsonNode>(testCases);
+var count = 0;
 
 foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["example"]! >= 0))
 {
@@ -14,6 +15,8 @@ foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["examp
     var output = result.ToHtml();
     if (answer.Equals(output) is false)
     {
+        count++;
+
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($"id: {id}");
 
@@ -29,5 +32,6 @@ foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["examp
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine();
     }
-
 }
+
+Console.WriteLine(count);
