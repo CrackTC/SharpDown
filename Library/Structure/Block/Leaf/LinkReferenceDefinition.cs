@@ -4,10 +4,6 @@ namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
 internal class LinkReferenceDefinition : LeafBlock
 {
-    public string Label { get; }
-    public string Destination { get; }
-    public string Title { get; }
-
     public LinkReferenceDefinition(string label, string destination, string? title = null)
     {
         Label = label;
@@ -15,7 +11,17 @@ internal class LinkReferenceDefinition : LeafBlock
         Title = title ?? string.Empty;
     }
 
-    internal override string ToHtml(bool tight) => string.Empty;
+    public string Label { get; }
+    public string Destination { get; }
+    public string Title { get; }
 
-    public override XElement? ToAst() => null;
+    internal override string ToHtml(bool tight)
+    {
+        return string.Empty;
+    }
+
+    public override XElement? ToAst()
+    {
+        return null;
+    }
 }

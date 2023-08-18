@@ -5,7 +5,8 @@ namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 
 internal class BlankLineParser : IMarkdownBlockParser
 {
-    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParsers)
+    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> parsers)
     {
         var line = TextUtils.ReadLine(text, out var remaining, out _, out _);
         if (!line.IsBlankLine()) return false;

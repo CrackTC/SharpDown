@@ -6,6 +6,19 @@ namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
 internal partial class AutolinkParser : IMarkdownLeafInlineParser
 {
+    public int TryParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
+    {
+        var tmp = text;
+        if (TryReadUriAutolink(ref tmp, out var link) || TryReadEmailAutolink(ref tmp, out link))
+        {
+            inline = link;
+            return text.Length - tmp.Length;
+        }
+
+        inline = null;
+        return 0;
+    }
+
     private static bool TryReadUriAutolink(ref ReadOnlySpan<char> text, out Autolink? link)
     {
         link = null;
@@ -19,7 +32,8 @@ internal partial class AutolinkParser : IMarkdownLeafInlineParser
     }
 
 
-    [GeneratedRegex(@"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")]
+    [GeneratedRegex(
+        @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")]
     private static partial Regex EmailRegex();
 
     private static bool TryReadEmailAutolink(ref ReadOnlySpan<char> text, out Autolink? link)
@@ -36,18 +50,5 @@ internal partial class AutolinkParser : IMarkdownLeafInlineParser
         var email = emailSpan.ToString();
         link = new Autolink("mailto:" + email, new Text(email));
         return true;
-    }
-
-    public int TryReadAndParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
-    {
-        var tmp = text;
-        if (TryReadUriAutolink(ref tmp, out var link) || TryReadEmailAutolink(ref tmp, out link))
-        {
-            inline = link;
-            return text.Length - tmp.Length;
-        }
-
-        inline = null;
-        return 0;
     }
 }

@@ -5,7 +5,7 @@ namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
 internal class HtmlTagParser : IMarkdownLeafInlineParser
 {
-    public int TryReadAndParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
+    public int TryParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
     {
         var tmp = text;
         if (tmp.TryReadOpenTag(out var tag)

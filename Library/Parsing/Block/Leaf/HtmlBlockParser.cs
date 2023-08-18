@@ -7,13 +7,28 @@ namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 
 internal partial class HtmlBlockParser : IMarkdownBlockParser
 {
+    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> parsers)
+    {
+        var remaining = Skip(text, out var content, out var type);
+        if (remaining == text) return false;
+
+        if (type == HtmlBlockType.Any && father.LastChild is Paragraph) return false;
+
+        text = remaining;
+        father.Children.Add(new HtmlBlock(content));
+        return true;
+    }
+
     [GeneratedRegex("^(?:pre|script|style|textarea)$", RegexOptions.IgnoreCase)]
     private static partial Regex TextRegex();
 
     [GeneratedRegex("</(?:pre|script|style|textarea)>", RegexOptions.IgnoreCase)]
     private static partial Regex TextEndingRegex();
 
-    [GeneratedRegex("^(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(
+        "^(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)$",
+        RegexOptions.IgnoreCase)]
     private static partial Regex MiscRegex();
 
     private static HtmlBlockType GetBlockType(ReadOnlySpan<char> text)
@@ -31,6 +46,7 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
             var tmp = line[1..];
             if (tmp.TryReadTagName(out var tagName) && TextRegex().IsMatch(tagName)) return HtmlBlockType.Text;
         }
+
         if (line.StartsWith("<!--")) return HtmlBlockType.Comment;
         if (line.StartsWith("<?")) return HtmlBlockType.ProcessingInstruction;
         if (line.StartsWith("<!") && line.Length > 2 && char.IsAsciiLetter(line[2])) return HtmlBlockType.Declaration;
@@ -81,21 +97,9 @@ internal partial class HtmlBlockParser : IMarkdownBlockParser
             };
 
             if (!assert && !remaining.IsEmpty) continue;
-            
+
             content = builder.ToString();
             return remaining;
         }
-    }
-
-    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParsers)
-    {
-        var remaining = Skip(text, out var content, out var type);
-        if (remaining == text) return false;
-
-        if (type == HtmlBlockType.Any && father.LastChild is Paragraph) return false;
-
-        text = remaining;
-        father.Children.Add(new HtmlBlock(content));
-        return true;
     }
 }

@@ -1,7 +1,8 @@
-﻿using CrackTC.SharpDown.Parsing;
-using System.CommandLine;
+﻿using System.CommandLine;
+using CrackTC.SharpDown.Parsing;
 
 namespace CrackTC.SharpDown.Cli;
+
 internal static class Program
 {
     private static void Handle(string markdownPath, string? outputPath)
@@ -14,7 +15,7 @@ internal static class Program
 
     private static void Main(string[] args)
     {
-        var markdownFileName = new Argument<string>()
+        var markdownFileName = new Argument<string>
         {
             Arity = ArgumentArity.ExactlyOne
         };

@@ -6,6 +6,19 @@ namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 internal class ThematicBreakParser : IMarkdownBlockParser
 {
     private const string ValidChars = "-_*";
+
+    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> parsers)
+    {
+        var remaining = Skip(text);
+        if (remaining == text) return false;
+
+        text = remaining;
+        father.Children.Add(new ThematicBreak());
+
+        return true;
+    }
+
     private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text)
     {
         char? validChar = null;
@@ -24,21 +37,16 @@ internal class ThematicBreakParser : IMarkdownBlockParser
                 validChar = ch;
                 validCount++;
             }
-            else if (validChar == ch) validCount++;
-            else if (!ch.IsSpace() && !ch.IsTab()) return text;
+            else if (validChar == ch)
+            {
+                validCount++;
+            }
+            else if (!ch.IsSpace() && !ch.IsTab())
+            {
+                return text;
+            }
         }
 
         return validCount >= 3 ? remaining : text;
-    }
-
-    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParsers)
-    {
-        var remaining = Skip(text);
-        if (remaining == text) return false;
-
-        text = remaining;
-        father.Children.Add(new ThematicBreak());
-
-        return true;
     }
 }

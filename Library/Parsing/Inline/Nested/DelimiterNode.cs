@@ -12,7 +12,7 @@ internal enum DelimiterType
     Star = 1 << 3,
     Underscore = 1 << 4,
     Link = 1 << 5,
-    Image = 1 << 6,
+    Image = 1 << 6
 }
 
 internal struct DelimiterNode

@@ -1,5 +1,4 @@
-﻿using CrackTC.SharpDown.Parsing.Block.Container;
-using CrackTC.SharpDown.Parsing.Inline.Nested;
+﻿using CrackTC.SharpDown.Parsing.Inline.Nested;
 using CrackTC.SharpDown.Structure;
 using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Container;
@@ -15,7 +14,8 @@ internal static class Utils
     {
         while (true)
         {
-            if (block.LastChild is not ContainerBlock container) return block.LastChild is Paragraph;
+            if (block.LastChild is not ContainerBlock container)
+                return block.LastChild is Paragraph;
             block = container;
         }
     }
@@ -46,18 +46,23 @@ internal static class Utils
         var meetBlankLine = false;
         var markedAsLoose = false;
         foreach (var child in children)
-        {
             if (child is ListItem listItem)
             {
-                if (!listAssigned) list = new List { Sign = listItem.Sign, Number = listItem.Number, IsOrdered = listItem.IsOrdered };
+                if (!listAssigned)
+                {
+                    list = new List { Sign = listItem.Sign, Number = listItem.Number, IsOrdered = listItem.IsOrdered };
+                }
                 else if (!ListItem.IsSameType((ListItem)list.Children[0], listItem))
                 {
-                    list.IsLoose = markedAsLoose || ListParser.IsListLoose(list);
+                    list.IsLoose = markedAsLoose || IsListLoose(list);
                     newChildren.Add(list);
 
                     list = new List { Sign = listItem.Sign, Number = listItem.Number, IsOrdered = listItem.IsOrdered };
                 }
-                else if (meetBlankLine) markedAsLoose = true;
+                else if (meetBlankLine)
+                {
+                    markedAsLoose = true;
+                }
 
                 listAssigned = true;
                 list.Children.Add(listItem);
@@ -67,10 +72,11 @@ internal static class Utils
                 if (listAssigned)
                 {
                     listAssigned = false;
-                    list.IsLoose = markedAsLoose || ListParser.IsListLoose(list);
+                    list.IsLoose = markedAsLoose || IsListLoose(list);
                     markedAsLoose = false;
                     newChildren.Add(list);
                 }
+
                 meetBlankLine = false;
                 newChildren.Add(child);
             }
@@ -79,11 +85,10 @@ internal static class Utils
                 if (listAssigned) meetBlankLine = true;
                 newChildren.Add(new BlankLine());
             }
-        }
 
         if (listAssigned)
         {
-            list.IsLoose = markedAsLoose || ListParser.IsListLoose(list);
+            list.IsLoose = markedAsLoose || IsListLoose(list);
             newChildren.Add(list);
         }
 
@@ -126,5 +131,25 @@ internal static class Utils
         LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes)
     {
         if (begin != end) textNodes.AddLast((begin, new Text(text[begin..end].ToString())));
+    }
+
+    private static bool IsListLoose(MarkdownBlock list)
+    {
+        for (var i = 0; i < list.Children.Count; i++)
+        {
+            var listItem = (ListItem)list.Children[i];
+            if (i != list.Children.Count - 1 && listItem.LastChild is BlankLine &&
+                listItem.Children.Count != 1) return true;
+
+            var skippedBlankLine = false;
+            for (var j = 0; j < listItem.Children.Count; j++)
+                if (listItem.Children[j] is not BlankLine) skippedBlankLine = true;
+                else if (skippedBlankLine)
+                    for (var k = j + 1; k < listItem.Children.Count; k++)
+                        if (listItem.Children[k] is not BlankLine)
+                            return true;
+        }
+
+        return false;
     }
 }

@@ -5,7 +5,7 @@ namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
 internal class SoftLineBreakParser : IMarkdownLeafInlineParser
 {
-    public int TryReadAndParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
+    public int TryParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
     {
         inline = null;
         if (text.IsEmpty) return 0;

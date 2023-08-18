@@ -6,6 +6,19 @@ namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 internal class AtxHeadingParser : IMarkdownBlockParser
 {
     private const char AtxHeadingIndicator = '#';
+
+    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> parsers)
+    {
+        var remaining = Skip(text, out var level, out var content);
+        if (remaining == text) return false;
+
+        text = remaining;
+        father.Children.Add(new AtxHeading(level, content));
+
+        return true;
+    }
+
     private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text, out int level, out string content)
     {
         level = 0;
@@ -45,16 +58,5 @@ internal class AtxHeadingParser : IMarkdownBlockParser
         spaceCount = line.CountTrailingCharacter(c => c.IsSpace() || c.IsTab());
         content = line[..^spaceCount].ToString();
         return remaining;
-    }
-
-    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParser)
-    {
-        var remaining = Skip(text, out var level, out var content);
-        if (remaining == text) return false;
-
-        text = remaining;
-        father.Children.Add(new AtxHeading(level, content));
-
-        return true;
     }
 }

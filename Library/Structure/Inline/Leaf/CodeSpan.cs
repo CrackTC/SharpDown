@@ -1,15 +1,24 @@
-﻿using CrackTC.SharpDown.Parsing;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
+using CrackTC.SharpDown.Parsing;
 
 namespace CrackTC.SharpDown.Structure.Inline.Leaf;
 
 internal class CodeSpan : MarkdownInline
 {
+    public CodeSpan(string content)
+    {
+        Content = content;
+    }
+
     private string Content { get; }
 
-    public CodeSpan(string content) => Content = content;
+    internal override string ToHtml(bool tight)
+    {
+        return $"<code>{Content.HtmlEscape()}</code>";
+    }
 
-    internal override string ToHtml(bool tight) => $"<code>{Content.HtmlEscape()}</code>";
-
-    public override XElement ToAst() => new(MarkdownRoot.Namespace + "code", Content);
+    public override XElement ToAst()
+    {
+        return new XElement(MarkdownRoot.Namespace + "code", Content);
+    }
 }

@@ -6,7 +6,13 @@ internal class BlankLine : LeafBlock
 {
     public string? Content { get; init; }
 
-    internal override string ToHtml(bool tight) => string.Empty;
+    internal override string ToHtml(bool tight)
+    {
+        return string.Empty;
+    }
 
-    public override XElement? ToAst() => null;
+    public override XElement? ToAst()
+    {
+        return null;
+    }
 }

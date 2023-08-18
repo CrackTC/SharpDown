@@ -14,27 +14,29 @@ namespace CrackTC.SharpDown.Parsing;
 
 public static class MarkdownParser
 {
-
     internal static bool ParseBlock(ref ReadOnlySpan<char> text,
-                                  MarkdownBlock father,
-                                  IEnumerable<IMarkdownBlockParser> blockParsers)
+        MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> blockParsers)
     {
         foreach (var blockParser in blockParsers)
-            if (blockParser.TryReadAndParse(ref text, father, blockParsers)) return true;
+            if (blockParser.TryReadAndParse(ref text, father, blockParsers))
+                return true;
 
         return false;
     }
 
     internal static void ParseBlocks(ReadOnlySpan<char> text,
-                             MarkdownBlock father,
-                             IEnumerable<IMarkdownBlockParser> blockParsers)
+        MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> blockParsers)
     {
         // parse blocks
         var lastIsParagraph = father.LastChild is Paragraph;
 
         while (text.IsEmpty is false)
-        {
-            if (ParseBlock(ref text, father, blockParsers)) lastIsParagraph = false;
+            if (ParseBlock(ref text, father, blockParsers))
+            {
+                lastIsParagraph = false;
+            }
             else if (lastIsParagraph)
             {
                 var previousParagraph = father.LastChild as Paragraph;
@@ -47,12 +49,11 @@ public static class MarkdownParser
                 lastIsParagraph = true;
                 father.Children.Add(new Paragraph(TextUtils.ReadLine(text, out text, out _, out _).ToString()));
             }
-        }
     }
 
     private static MarkdownRoot Parse(ReadOnlySpan<char> text,
-                                     IEnumerable<IMarkdownBlockParser> blockParsers,
-                                     IEnumerable<IMarkdownLeafInlineParser> leafInlineParsers)
+        IEnumerable<IMarkdownBlockParser> blockParsers,
+        IEnumerable<IMarkdownLeafInlineParser> leafInlineParsers)
     {
         var root = new MarkdownRoot();
         ParseBlocks(text, root, blockParsers);
@@ -75,7 +76,7 @@ public static class MarkdownParser
             new HtmlBlockParser(),
             new IndentedCodeBlockParser(),
             new LinkReferenceDefinitionParser(),
-            new SetextHeadingParser(),
+            new SetextHeadingParser()
         };
 
         var leafInlineParsers = new IMarkdownLeafInlineParser[]
@@ -85,18 +86,19 @@ public static class MarkdownParser
             new HtmlTagParser(),
             new WikiLinkParser(),
             new EmbeddedFileParser(),
+            new MathParser(),
             new HardLineBreakParser(),
             new SoftLineBreakParser()
         };
 
         return Parse(text, blockParsers, leafInlineParsers);
     }
-    
+
     private static void ProcessStar(ReadOnlySpan<char> text,
-                                   ref int i,
-                                   ref int textBegin,
-                                   LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                   LinkedList<DelimiterNode> delimiterStack)
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
     {
         var starCount = 1;
         int j;
@@ -141,10 +143,10 @@ public static class MarkdownParser
     }
 
     private static void ProcessUnderscore(ReadOnlySpan<char> text,
-                                         ref int i,
-                                         ref int textBegin,
-                                         LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                         LinkedList<DelimiterNode> delimiterStack)
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
     {
         var underscoreCount = 1;
         int j;
@@ -171,7 +173,7 @@ public static class MarkdownParser
             i = j - 1;
             return;
         }
-        
+
         Utils.AppendTextRange(text, textBegin, i, textNodes);
 
         textNodes.AddLast((i, new Text(text[i..j].ToString())));
@@ -185,11 +187,9 @@ public static class MarkdownParser
             Type = (isLeftFlankingDelimiterRun && (!isRightFlankingDelimiterRun || precededByPunctuation)
                        ? DelimiterType.Open
                        : DelimiterType.None)
-
                    | (isRightFlankingDelimiterRun && (!isLeftFlankingDelimiterRun || followedByPunctuation)
                        ? DelimiterType.Closing
                        : DelimiterType.None)
-
                    | DelimiterType.Underscore
         };
         delimiterStack.AddLast(node);
@@ -197,13 +197,13 @@ public static class MarkdownParser
 
 
     private static void ProcessLinkStart(ReadOnlySpan<char> text,
-                                       ref int i,
-                                       ref int textBegin,
-                                       LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                       LinkedList<DelimiterNode> delimiterStack)
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
     {
         Utils.AppendTextRange(text, textBegin, i, textNodes);
-        
+
         textNodes.AddLast((i, new Text("[")));
         textBegin = i + 1;
 
@@ -217,14 +217,14 @@ public static class MarkdownParser
     }
 
     private static void ProcessImageStart(ReadOnlySpan<char> text,
-                                         ref int i,
-                                         ref int textBegin,
-                                         LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                         LinkedList<DelimiterNode> delimiterStack)
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
     {
         if (i >= text.Length - 1 || text[i + 1] is not '[') return;
         Utils.AppendTextRange(text, textBegin, i, textNodes);
-        
+
         textNodes.AddLast((i, new Text("![")));
         textBegin = i + 2;
         i++;
@@ -238,7 +238,8 @@ public static class MarkdownParser
         delimiterStack.AddLast(node);
     }
 
-    private static Dictionary<string, LinkReferenceDefinition> GetReferenceDictionary(IEnumerable<LinkReferenceDefinition> definitions)
+    private static Dictionary<string, LinkReferenceDefinition> GetReferenceDictionary(
+        IEnumerable<LinkReferenceDefinition> definitions)
     {
         var result = new Dictionary<string, LinkReferenceDefinition>(StringComparer.InvariantCultureIgnoreCase);
         foreach (var definition in definitions.Reverse()) result[definition.Label.NormalizeLabel()] = definition;
@@ -246,14 +247,14 @@ public static class MarkdownParser
     }
 
     private static bool ProcessLeafInline(ReadOnlySpan<char> text,
-                                          ref int i,
-                                          ref int textBegin,
-                                          LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                          IEnumerable<IMarkdownLeafInlineParser> parsers)
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        IEnumerable<IMarkdownLeafInlineParser> parsers)
     {
         foreach (var parser in parsers)
         {
-            var length = parser.TryReadAndParse(text[i..], out var inline);
+            var length = parser.TryParse(text[i..], out var inline);
             if (length is 0) continue;
             Utils.AppendTextRange(text, textBegin, i, textNodes);
 
@@ -262,15 +263,16 @@ public static class MarkdownParser
             i = textBegin - 1;
             return true;
         }
+
         return false;
     }
 
     private static bool ProcessInlineLink(ReadOnlySpan<char> text,
-                                          ref int i,
-                                          ref int textBegin,
-                                          LinkedListNode<DelimiterNode> openDelimiterNode,
-                                          LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                          LinkedList<DelimiterNode> delimiterStack)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
     {
         var remaining = text[(i + 2)..];
 
@@ -299,9 +301,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                            destination,
-                            title ?? string.Empty);
+        var link = new Link(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            destination,
+            title ?? string.Empty);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -311,11 +314,11 @@ public static class MarkdownParser
     }
 
     private static void ProcessInlineImage(ReadOnlySpan<char> text,
-                                          ref int i,
-                                          ref int textBegin,
-                                          LinkedListNode<DelimiterNode> openDelimiterNode,
-                                          LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                          LinkedList<DelimiterNode> delimiterStack)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack)
     {
         var remaining = text[(i + 2)..];
 
@@ -353,9 +356,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                            destination,
-                            title ?? string.Empty);
+        var link = new Image(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            destination,
+            title ?? string.Empty);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -363,12 +367,12 @@ public static class MarkdownParser
     }
 
     private static void ProcessFullReferenceLink(ReadOnlySpan<char> text,
-                                                 ref int i,
-                                                 ref int textBegin,
-                                                 LinkedListNode<DelimiterNode> openDelimiterNode,
-                                                 LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                                 LinkedList<DelimiterNode> delimiterStack,
-                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var remaining = text[(i + 1)..];
 
@@ -393,9 +397,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                            definition.Destination,
-                            definition.Title);
+        var link = new Link(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            definition.Destination,
+            definition.Title);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -404,12 +409,12 @@ public static class MarkdownParser
     }
 
     private static void ProcessFullReferenceImage(ReadOnlySpan<char> text,
-                                                 ref int i,
-                                                 ref int textBegin,
-                                                 LinkedListNode<DelimiterNode> openDelimiterNode,
-                                                 LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                                 LinkedList<DelimiterNode> delimiterStack,
-                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var remaining = text[(i + 1)..];
 
@@ -434,9 +439,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                             definition.Destination,
-                             definition.Title);
+        var link = new Image(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            definition.Destination,
+            definition.Title);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -444,12 +450,12 @@ public static class MarkdownParser
     }
 
     private static void ProcessCollapsedReferenceLink(ReadOnlySpan<char> text,
-                                                 ref int i,
-                                                 ref int textBegin,
-                                                 LinkedListNode<DelimiterNode> openDelimiterNode,
-                                                 LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                                 LinkedList<DelimiterNode> delimiterStack,
-                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
@@ -467,9 +473,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                            definition.Destination,
-                            definition.Title);
+        var link = new Link(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            definition.Destination,
+            definition.Title);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -478,12 +485,12 @@ public static class MarkdownParser
     }
 
     private static void ProcessCollapsedReferenceImage(ReadOnlySpan<char> text,
-                                                 ref int i,
-                                                 ref int textBegin,
-                                                 LinkedListNode<DelimiterNode> openDelimiterNode,
-                                                 LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                                 LinkedList<DelimiterNode> delimiterStack,
-                                                 IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
@@ -501,9 +508,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                             definition.Destination,
-                             definition.Title);
+        var link = new Image(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            definition.Destination,
+            definition.Title);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -512,12 +520,12 @@ public static class MarkdownParser
 
 
     private static void ProcessShortcutReferenceLink(ReadOnlySpan<char> text,
-                                                     ref int i,
-                                                     ref int textBegin,
-                                                     LinkedListNode<DelimiterNode> openDelimiterNode,
-                                                     LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                                     LinkedList<DelimiterNode> delimiterStack,
-                                                     IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 1)..i].ToString().NormalizeLabel();
@@ -535,9 +543,10 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Link(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                            definition.Destination,
-                            definition.Title);
+        var link = new Link(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            definition.Destination,
+            definition.Title);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -546,12 +555,12 @@ public static class MarkdownParser
     }
 
     private static void ProcessShortcutReferenceImage(ReadOnlySpan<char> text,
-                                                      ref int i,
-                                                      ref int textBegin,
-                                                      LinkedListNode<DelimiterNode> openDelimiterNode,
-                                                      LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                                      LinkedList<DelimiterNode> delimiterStack,
-                                                      IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedListNode<DelimiterNode> openDelimiterNode,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var labelBegin = openDelimiterNode.Value.TextNode.Value.StartIndex;
         var label = text[(labelBegin + 2)..i].ToString().NormalizeLabel();
@@ -569,8 +578,9 @@ public static class MarkdownParser
 
         ProcessEmphasis(textNodes, delimiterStack, openDelimiterNode);
 
-        var link = new Image(Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
-                             definition.Destination, definition.Title);
+        var link = new Image(
+            Utils.ElementsAfter(openDelimiterNode.Value.TextNode).Select(tuple => tuple.Inline).ToList(),
+            definition.Destination, definition.Title);
 
         Utils.RemoveToEnd(textNodes, openDelimiterNode.Value.TextNode);
         textNodes.AddLast((openDelimiterNode.Value.TextNode.Value.StartIndex, link));
@@ -578,11 +588,11 @@ public static class MarkdownParser
     }
 
     private static void ProcessLinkAndImage(ReadOnlySpan<char> text,
-                                   ref int i,
-                                   ref int textBegin,
-                                   LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                   LinkedList<DelimiterNode> delimiterStack,
-                                   IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
+        ref int i,
+        ref int textBegin,
+        LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
+        LinkedList<DelimiterNode> delimiterStack,
+        IReadOnlyDictionary<string, LinkReferenceDefinition> definitionDictionary)
     {
         var currentNode = delimiterStack.Last;
         while (currentNode is not null)
@@ -599,20 +609,25 @@ public static class MarkdownParser
                 if (text[(i + 1)..].StartsWith("(")) // inline link
                 {
                     if (!ProcessInlineLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack))
-                        ProcessShortcutReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+                        ProcessShortcutReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack,
+                            definitionDictionary);
                     return;
                 }
 
                 if (text[(i + 1)..].StartsWith("[")) // collapsed or full reference link
                 {
                     if (text[(i + 2)..].StartsWith("]"))
-                        ProcessCollapsedReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+                        ProcessCollapsedReferenceLink(text, ref i, ref textBegin, currentNode, textNodes,
+                            delimiterStack, definitionDictionary);
                     else
-                        ProcessFullReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+                        ProcessFullReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack,
+                            definitionDictionary);
                     return;
                 }
+
                 // shortcut reference link
-                ProcessShortcutReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+                ProcessShortcutReferenceLink(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack,
+                    definitionDictionary);
                 return;
             }
 
@@ -633,12 +648,16 @@ public static class MarkdownParser
                 if (text[(i + 1)..].StartsWith("["))
                 {
                     if (text[(i + 2)..].StartsWith("]"))
-                        ProcessCollapsedReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+                        ProcessCollapsedReferenceImage(text, ref i, ref textBegin, currentNode, textNodes,
+                            delimiterStack, definitionDictionary);
                     else
-                        ProcessFullReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+                        ProcessFullReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack,
+                            definitionDictionary);
                     return;
                 }
-                ProcessShortcutReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack, definitionDictionary);
+
+                ProcessShortcutReferenceImage(text, ref i, ref textBegin, currentNode, textNodes, delimiterStack,
+                    definitionDictionary);
                 return;
             }
 
@@ -647,9 +666,9 @@ public static class MarkdownParser
     }
 
     internal static void ParseInline(ReadOnlySpan<char> text,
-                                   MarkdownBlock father,
-                                   IEnumerable<IMarkdownLeafInlineParser> parsers,
-                                   IEnumerable<LinkReferenceDefinition> definitions)
+        MarkdownBlock father,
+        IEnumerable<IMarkdownLeafInlineParser> parsers,
+        IEnumerable<LinkReferenceDefinition> definitions)
     {
         text = text.TrimTabAndSpace();
         var textNodes = new LinkedList<(int StartIndex, MarkdownInline Inline)>();
@@ -663,13 +682,11 @@ public static class MarkdownParser
 
             // handle backslash escape
             if (text[i] is '\\' && i < text.Length - 1)
-            {
                 if (text[i + 1].IsAsciiPunctuation())
                 {
                     i++;
                     continue;
                 }
-            }
 
             switch (text[i])
             {
@@ -705,8 +722,8 @@ public static class MarkdownParser
     }
 
     private static void ProcessEmphasis(LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
-                                        LinkedList<DelimiterNode> delimiterStack,
-                                        LinkedListNode<DelimiterNode>? stackBottom)
+        LinkedList<DelimiterNode> delimiterStack,
+        LinkedListNode<DelimiterNode>? stackBottom)
     {
         var currentPosition = stackBottom == null ? delimiterStack.First : stackBottom.Next;
         var openersBottomStar = stackBottom;
@@ -717,8 +734,8 @@ public static class MarkdownParser
         while (currentPosition is not null)
         {
             if (currentPosition.Value.Type.HasFlag(DelimiterType.Closing) is false
-                || currentPosition.Value.Type.HasFlag(DelimiterType.Star) is false
-                    && currentPosition.Value.Type.HasFlag(DelimiterType.Underscore) is false)
+                || (currentPosition.Value.Type.HasFlag(DelimiterType.Star) is false
+                    && currentPosition.Value.Type.HasFlag(DelimiterType.Underscore) is false))
             {
                 currentPosition = currentPosition.Next;
                 continue;
@@ -726,8 +743,8 @@ public static class MarkdownParser
 
             var opener = currentPosition.Previous;
             ref var openersBottom = ref currentPosition.Value.Type.HasFlag(DelimiterType.Star)
-                                    ? ref openersBottomStar
-                                    : ref openersBottomUnderscore;
+                ? ref openersBottomStar
+                : ref openersBottomUnderscore;
 
             while (opener != stackBottom && opener != openersBottom)
             {
@@ -764,6 +781,7 @@ public static class MarkdownParser
                         emphasis.Children.Add(node.Next!.Value.Inline);
                         textNodes.Remove(node.Next!);
                     }
+
                     textNodes.AddAfter(node, (0, emphasis));
                 }
 
@@ -781,6 +799,7 @@ public static class MarkdownParser
                     ref var value = ref opener.Value.TextNode.ValueRef;
                     value.Inline = new Text(((Text)value.Inline).Content[(isStrong ? 2 : 1)..]);
                 }
+
                 if (currentPosition.Value.Number is 0)
                 {
                     textNodes.Remove(currentPosition.Value.TextNode);
@@ -798,7 +817,7 @@ public static class MarkdownParser
             }
 
             if (opener != stackBottom && opener != openersBottom) continue; // not found
-            
+
             if (!multipleOfThree) openersBottom = currentPosition!.Previous;
             multipleOfThree = false;
 

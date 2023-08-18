@@ -1,12 +1,26 @@
-﻿using CrackTC.SharpDown.Structure.Block;
+﻿using System.Text;
+using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Leaf;
-using System.Text;
 
 namespace CrackTC.SharpDown.Parsing.Block.Leaf;
 
 internal class SetextHeadingParser : IMarkdownBlockParser
 {
     private const string ValidChars = "=-";
+
+    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> parsers)
+    {
+        if (father.LastChild is Paragraph) return false;
+
+        var remaining = Skip(text, out var level, out var content);
+        if (remaining == text) return false;
+
+        text = remaining;
+        father.Children.Add(new SetextHeading(level, content));
+        return true;
+    }
+
     private static ReadOnlySpan<char> SkipUnderline(ReadOnlySpan<char> text, out int level)
     {
         level = 0;
@@ -28,8 +42,14 @@ internal class SetextHeadingParser : IMarkdownBlockParser
                 if (!ValidChars.Contains(ch)) return text;
                 validChar = ch;
             }
-            else if (ch.IsSpace() || ch.IsTab()) trailingSpace = true;
-            else if (trailingSpace || ch != validChar) return text;
+            else if (ch.IsSpace() || ch.IsTab())
+            {
+                trailingSpace = true;
+            }
+            else if (trailingSpace || ch != validChar)
+            {
+                return text;
+            }
         }
 
         if (validChar == null) return text;
@@ -64,19 +84,8 @@ internal class SetextHeadingParser : IMarkdownBlockParser
                     return remaining;
                 }
             }
+
             headingBuilder.Append('\n').Append(line);
         }
-    }
-
-    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParsers)
-    {
-        if (father.LastChild is Paragraph) return false;
-
-        var remaining = Skip(text, out var level, out var content);
-        if (remaining == text) return false;
-
-        text = remaining;
-        father.Children.Add(new SetextHeading(level, content));
-        return true;
     }
 }

@@ -13,7 +13,7 @@ internal class WikiLink : MarkdownInline
 
     private string Display { get; }
     private string Destination { get; }
-    
+
     internal override string ToHtml(bool tight)
     {
         var destination = Destination.HtmlEscape();
@@ -21,8 +21,10 @@ internal class WikiLink : MarkdownInline
         return $"<a class=\"wiki-link\" href=\"{destination}\">{display}</a>";
     }
 
-    public override XElement ToAst() =>
-        new(MarkdownRoot.Namespace + "wiki-link",
+    public override XElement ToAst()
+    {
+        return new XElement(MarkdownRoot.Namespace + "wiki-link",
             new XAttribute("display", Display),
             new XAttribute("destination", Destination));
+    }
 }

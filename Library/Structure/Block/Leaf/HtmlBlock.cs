@@ -16,11 +16,20 @@ internal enum HtmlBlockType
 
 internal class HtmlBlock : LeafBlock
 {
+    public HtmlBlock(string content)
+    {
+        Content = content;
+    }
+
     private string Content { get; }
 
-    public HtmlBlock(string content) => Content = content;
+    internal override string ToHtml(bool tight)
+    {
+        return Content;
+    }
 
-    internal override string ToHtml(bool tight) => Content;
-
-    public override XElement ToAst() => new(MarkdownRoot.Namespace + "html_block", Content);
+    public override XElement ToAst()
+    {
+        return new XElement(MarkdownRoot.Namespace + "html_block", Content);
+    }
 }

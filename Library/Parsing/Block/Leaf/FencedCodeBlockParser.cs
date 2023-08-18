@@ -1,11 +1,24 @@
-﻿using CrackTC.SharpDown.Structure.Block;
+﻿using System.Text;
+using CrackTC.SharpDown.Structure.Block;
 using CrackTC.SharpDown.Structure.Block.Leaf;
-using System.Text;
 
 namespace CrackTC.SharpDown.Parsing.Block.Leaf;
+
 internal class FencedCodeBlockParser : IMarkdownBlockParser
 {
     private const string ValidChars = "`~";
+
+    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father,
+        IEnumerable<IMarkdownBlockParser> parsers)
+    {
+        var remaining = Skip(text, out var infoString, out var code);
+        if (remaining == text) return false;
+
+        text = remaining;
+        father.Children.Add(new FencedCodeBlock(infoString ?? string.Empty, code ?? string.Empty));
+
+        return true;
+    }
 
     private static bool IsValidClosing(ReadOnlySpan<char> line, int columnNumber, int fenceCount, char? validChar)
     {
@@ -14,10 +27,13 @@ internal class FencedCodeBlockParser : IMarkdownBlockParser
 
         var fence = line.TrimTabAndSpace();
         if (fence.Length < fenceCount) return false;
-        foreach (var ch in fence) if (ch != validChar) return false;
+        foreach (var ch in fence)
+            if (ch != validChar)
+                return false;
 
         return true;
     }
+
     private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text, out string? infoString, out string? code)
     {
         infoString = string.Empty;
@@ -31,14 +47,15 @@ internal class FencedCodeBlockParser : IMarkdownBlockParser
         char? validChar = null;
         var fenceCount = 0;
         for (var i = index; i < line.Length; i++)
-        {
-            if (validChar is null && ValidChars.Contains(line[i]) || line[i] == validChar)
+            if ((validChar is null && ValidChars.Contains(line[i])) || line[i] == validChar)
             {
                 validChar = line[i];
                 fenceCount++;
             }
-            else break;
-        }
+            else
+            {
+                break;
+            }
 
         if (fenceCount < 3) return text;
 
@@ -54,22 +71,11 @@ internal class FencedCodeBlockParser : IMarkdownBlockParser
             (_, index, var tabRemainingSpaces) = line.CountLeadingSpace(columnNumber, indentation);
 
             codeBuilder.Append(TextUtils.Space, tabRemainingSpaces)
-                       .Append(line[index..])
-                       .Append('\n');
+                .Append(line[index..])
+                .Append('\n');
         }
 
         code = codeBuilder.ToString();
         return remaining;
-    }
-
-    public bool TryReadAndParse(ref ReadOnlySpan<char> text, MarkdownBlock father, IEnumerable<IMarkdownBlockParser> blockParsers)
-    {
-        var remaining = Skip(text, out var infoString, out var code);
-        if (remaining == text) return false;
-
-        text = remaining;
-        father.Children.Add(new FencedCodeBlock(infoString ?? string.Empty, code ?? string.Empty));
-
-        return true;
     }
 }

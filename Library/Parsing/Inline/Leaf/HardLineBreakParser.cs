@@ -5,7 +5,7 @@ namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
 internal class HardLineBreakParser : IMarkdownLeafInlineParser
 {
-    public int TryReadAndParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
+    public int TryParse(ReadOnlySpan<char> text, out MarkdownInline? inline)
     {
         inline = null;
         var spaceCount = text.CountLeadingCharacter(ch => ch.IsSpace());
@@ -16,7 +16,7 @@ internal class HardLineBreakParser : IMarkdownLeafInlineParser
         if (spaceCount == text.Length) return 0;
 
         if (!text[spaceCount].IsLineEnding()) return 0;
-        
+
         TextUtils.ReadLine(text[spaceCount..], out var remaining, out _, out _);
         if (remaining.IsEmpty) return 0;
 

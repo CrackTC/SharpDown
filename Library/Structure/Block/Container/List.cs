@@ -1,6 +1,6 @@
-﻿using CrackTC.SharpDown.Parsing.Inline.Leaf;
+﻿using System.Xml.Linq;
+using CrackTC.SharpDown.Parsing.Inline.Leaf;
 using CrackTC.SharpDown.Structure.Block.Leaf;
-using System.Xml.Linq;
 
 namespace CrackTC.SharpDown.Structure.Block.Container;
 
@@ -12,27 +12,27 @@ internal class List : ContainerBlock
     public bool IsLoose { get; internal set; }
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
-                                     IEnumerable<LinkReferenceDefinition> definitions)
-        => Children.ForEach(child => ((MarkdownBlock)child).ParseInline(parsers, definitions));
+        IEnumerable<LinkReferenceDefinition> definitions)
+    {
+        Children.ForEach(child => ((MarkdownBlock)child).ParseInline(parsers, definitions));
+    }
 
     public override XElement ToAst()
     {
         var content = Children.Select(child => child.ToAst());
 
         if (IsOrdered is false)
-        {
             return new XElement(MarkdownRoot.Namespace + "list",
-                       new XAttribute("type", "bullet"),
-                       new XAttribute("tight", !IsLoose),
-                       content);
-        }
+                new XAttribute("type", "bullet"),
+                new XAttribute("tight", !IsLoose),
+                content);
 
         return new XElement(MarkdownRoot.Namespace + "list",
-                   new XAttribute("type", "ordered"),
-                   new XAttribute("start", Number),
-                   new XAttribute("tight", !IsLoose),
-                   new XAttribute("delimiter", Sign is '.' ? "period" : "paren"),
-                   content);
+            new XAttribute("type", "ordered"),
+            new XAttribute("start", Number),
+            new XAttribute("tight", !IsLoose),
+            new XAttribute("delimiter", Sign is '.' ? "period" : "paren"),
+            content);
     }
 
     internal override string ToHtml(bool tight)

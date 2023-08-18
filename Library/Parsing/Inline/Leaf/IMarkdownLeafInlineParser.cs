@@ -4,5 +4,5 @@ namespace CrackTC.SharpDown.Parsing.Inline.Leaf;
 
 internal interface IMarkdownLeafInlineParser
 {
-    public int TryReadAndParse(ReadOnlySpan<char> text, out MarkdownInline? inline);
+    public int TryParse(ReadOnlySpan<char> text, out MarkdownInline? inline);
 }

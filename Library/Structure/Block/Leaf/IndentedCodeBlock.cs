@@ -5,16 +5,20 @@ namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
 internal class IndentedCodeBlock : LeafBlock
 {
-    public string Code { get; internal set; }
     public IndentedCodeBlock(string code)
     {
         Code = code;
     }
+
+    public string Code { get; internal set; }
 
     internal override string ToHtml(bool tight)
     {
         return $"<pre><code>{Code.HtmlEscape()}</code></pre>";
     }
 
-    public override XElement ToAst() => new(MarkdownRoot.Namespace + "code_block", Code);
+    public override XElement ToAst()
+    {
+        return new XElement(MarkdownRoot.Namespace + "code_block", Code);
+    }
 }

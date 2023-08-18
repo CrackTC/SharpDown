@@ -1,14 +1,17 @@
+using System.Xml.Linq;
 using CrackTC.SharpDown.Parsing;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
-using System.Xml.Linq;
 
 namespace CrackTC.SharpDown.Structure.Block.Leaf;
 
 internal class Paragraph : LeafBlock
 {
-    public string Content { get; }
+    public Paragraph(string content)
+    {
+        Content = content;
+    }
 
-    public Paragraph(string content) => Content = content;
+    public string Content { get; }
 
     internal override string ToHtml(bool tight)
     {
@@ -17,9 +20,13 @@ internal class Paragraph : LeafBlock
     }
 
     public override XElement ToAst()
-        => new(MarkdownRoot.Namespace + "paragraph", Children.Select(child => child.ToAst()));
+    {
+        return new XElement(MarkdownRoot.Namespace + "paragraph", Children.Select(child => child.ToAst()));
+    }
 
     internal override void ParseInline(IEnumerable<IMarkdownLeafInlineParser> parsers,
         IEnumerable<LinkReferenceDefinition> definitions)
-        => MarkdownParser.ParseInline(Content, this, parsers, definitions);
+    {
+        MarkdownParser.ParseInline(Content, this, parsers, definitions);
+    }
 }
