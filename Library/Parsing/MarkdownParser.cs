@@ -1,4 +1,5 @@
-﻿using CrackTC.SharpDown.Parsing.Block;
+﻿using System.Runtime.InteropServices;
+using CrackTC.SharpDown.Parsing.Block;
 using CrackTC.SharpDown.Parsing.Block.Container;
 using CrackTC.SharpDown.Parsing.Block.Leaf;
 using CrackTC.SharpDown.Parsing.Inline.Leaf;
@@ -94,6 +95,22 @@ public static class MarkdownParser
         };
 
         return Parse(text, blockParsers, leafInlineParsers);
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "sharpdown_tohtml")]
+    private static nint MarkdownToHtml(nint markdown)
+    {
+        var text = Marshal.PtrToStringUTF8(markdown);
+        if (text == null) return nint.Zero;
+        var root = Parse(text);
+        var html = root.ToHtml();
+        return Marshal.StringToHGlobalAnsi(html);
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "sharpdown_free")]
+    private static void FreeString(nint str)
+    {
+        Marshal.FreeHGlobal(str);
     }
 
     private static void ProcessTilde(ReadOnlySpan<char> text,
