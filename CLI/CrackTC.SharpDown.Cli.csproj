@@ -5,7 +5,21 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
         <PublishAot>true</PublishAot>
+        <StripSymbols>true</StripSymbols>
+        <SelfContained>true</SelfContained>
+        <TrimMode>full</TrimMode>
+        <RunAOTCompilation>true</RunAOTCompilation>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+        <PublishReadyToRunEmitSymbols>false</PublishReadyToRunEmitSymbols>
+        <DebuggerSupport>false</DebuggerSupport>
+        <EnableUnsafeUTF7Encoding>true</EnableUnsafeUTF7Encoding>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <HttpActivityPropagationSupport>true</HttpActivityPropagationSupport>
+        <MetadataUpdaterSupport>true</MetadataUpdaterSupport>
+        <UseSystemResourceKeys>true</UseSystemResourceKeys>
     </PropertyGroup>
 
     <ItemGroup>
