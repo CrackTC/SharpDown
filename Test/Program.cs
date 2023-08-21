@@ -38,5 +38,5 @@ foreach (var testCase in json!.AsArray().Where(testCase => (int)testCase!["examp
 
 watch.Stop();
 var elapsedMs = watch.ElapsedMilliseconds;
-Console.WriteLine(elapsedMs);
-Console.WriteLine(count);
+Console.WriteLine($"{elapsedMs} ms elapsed");
+Console.WriteLine($"{count} errors found");
