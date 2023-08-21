@@ -11,7 +11,7 @@ internal class Autolink : MarkdownInline
         Label = label;
     }
 
-    private string Destination { get; }
+    internal string Destination { get; }
     private Text Label { get; }
 
     internal override string ToHtml(bool tight)

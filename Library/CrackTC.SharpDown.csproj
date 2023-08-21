@@ -24,8 +24,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Parsing\entities.bin" />
-        <RuntimeHostConfigurationOption Include="System.Globalization.UseNls" Value="true" />
+        <EmbeddedResource Include="Parsing\entities.bin"/>
+        <RuntimeHostConfigurationOption Include="System.Globalization.UseNls" Value="true"/>
     </ItemGroup>
 
 </Project>

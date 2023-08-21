@@ -102,13 +102,14 @@ public static class MarkdownParser
         LinkedList<(int StartIndex, MarkdownInline Inline)> textNodes,
         LinkedList<DelimiterNode> delimiterStack)
     {
-        int tildeCount = 1;
+        var tildeCount = 1;
         while (i + tildeCount < text.Length && text[i + tildeCount] == '~') tildeCount++;
         if (tildeCount > 2)
         {
             i += tildeCount - 1;
             return;
         }
+
         Utils.AppendTextRange(text, textBegin, i, textNodes);
         textNodes.AddLast((i, new Text(tildeCount == 1 ? "~" : "~~")));
         textBegin = i + tildeCount;
@@ -928,5 +929,4 @@ public static class MarkdownParser
             delimiterStack.Remove(tmp);
         }
     }
-
 }
