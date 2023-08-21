@@ -13,7 +13,7 @@ internal class SetextHeadingParser : IMarkdownBlockParser
     {
         if (father.LastChild is Paragraph) return false;
 
-        var remaining = Skip(text, out var level, out var content);
+        var remaining = Skip(text, out var level, out var content, parsers);
         if (remaining == text) return false;
 
         text = remaining;
@@ -57,7 +57,8 @@ internal class SetextHeadingParser : IMarkdownBlockParser
         return remaining;
     }
 
-    private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text, out int level, out string content)
+    private static ReadOnlySpan<char> Skip(ReadOnlySpan<char> text, out int level, out string content,
+        IEnumerable<IMarkdownBlockParser> parsers)
     {
         level = 0;
         content = string.Empty;
@@ -72,6 +73,11 @@ internal class SetextHeadingParser : IMarkdownBlockParser
 
         while (true)
         {
+            if (MarkdownParser.ParseBlock(ref remaining, new BlankLine(),
+                    parsers.Where(p =>
+                        p is not SetextHeadingParser
+                            and not TableParser
+                            and not ThematicBreakParser))) return text;
             line = TextUtils.ReadLine(remaining, out remaining, out _, out var markedAsParagraph);
 
             if (line.IsBlankLine()) return text;

@@ -575,7 +575,7 @@ internal static class TextUtils
             if (!tmp.TryRemoveLineEnding()) continue;
             remaining = tmp;
             var line = text[..index];
-            columnNumber = line.ReadColumnNumber();
+            columnNumber = line.Length > 1 ? line.ReadColumnNumber() : 0;
             if (!line.IsEmpty && line[^1] == '\0')
             {
                 markedAsParagraph = true;
