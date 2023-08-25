@@ -20,11 +20,15 @@
         <HttpActivityPropagationSupport>true</HttpActivityPropagationSupport>
         <MetadataUpdaterSupport>true</MetadataUpdaterSupport>
         <UseSystemResourceKeys>true</UseSystemResourceKeys>
+        <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+        <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+        <PositionIndependentExecutable>false</PositionIndependentExecutable>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Library\CrackTC.SharpDown.csproj"/>
+        <LinkerArg Include="-static" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+        <ProjectReference Include="..\Library\CrackTC.SharpDown.csproj" />
     </ItemGroup>
 
 </Project>
